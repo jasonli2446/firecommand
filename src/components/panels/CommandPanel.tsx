@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check, FileText, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check, FileText, TrendingUp, TrendingDown, Minus, Flame, Plane, Users, Tractor, Droplets } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // ScrollArea from base-ui doesn't scroll in flex layouts — use native overflow
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +32,15 @@ const RISK_COLORS: Record<string, string> = {
   immediate: 'bg-red-500/20 text-red-400',
   warning: 'bg-orange-500/20 text-orange-400',
   watch: 'bg-yellow-500/20 text-yellow-400',
+};
+
+const RESOURCE_TYPE_ICONS: Record<string, typeof Flame> = {
+  engine: Flame,
+  helicopter: Plane,
+  hand_crew: Users,
+  air_tanker: Plane,
+  dozer: Tractor,
+  water_tender: Droplets,
 };
 
 const CONTAINMENT_PER_TYPE: Record<string, number> = {
@@ -622,12 +631,16 @@ export function CommandPanel() {
               const available = typeResources.filter(
                 (r) => r.status === 'available'
               ).length;
+              const TypeIcon = RESOURCE_TYPE_ICONS[type];
               return (
                 <div key={type} className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {type.replace('_', ' ')}s
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {TypeIcon && <TypeIcon className="h-3 w-3 text-muted-foreground/60" />}
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        {type.replace('_', ' ')}s
+                      </span>
+                    </div>
                     <span className="text-xs text-muted-foreground">
                       {available}/{typeResources.length} avail
                     </span>
