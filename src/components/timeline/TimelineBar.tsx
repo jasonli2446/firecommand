@@ -11,6 +11,8 @@ const SPARKLINE_BINS = 80;
 export function TimelineBar() {
   const {
     fireDetections,
+    fireClusters,
+    resources,
     timelinePosition,
     isPlaying,
     playbackSpeed,
@@ -104,8 +106,43 @@ export function TimelineBar() {
     minute: '2-digit',
   });
 
+  // Status strip metrics
+  const totalAcres = useMemo(() => {
+    return fireClusters.reduce((sum, cluster) => sum + cluster.estimatedAcres, 0);
+  }, [fireClusters]);
+
+  const deployedCount = useMemo(() => {
+    return resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length;
+  }, [resources]);
+
+  const totalResources = resources.length;
+
+  const { threatLevel, threatColor } = useMemo(() => {
+    const criticalCount = fireClusters.filter((c) => c.severity === 'critical').length;
+    const highCount = fireClusters.filter((c) => c.severity === 'high').length;
+
+    if (criticalCount > 0) {
+      return { threatLevel: 'EXTREME', threatColor: 'text-red-500/90' };
+    } else if (highCount > 0) {
+      return { threatLevel: 'HIGH', threatColor: 'text-orange-500/90' };
+    } else if (fireClusters.length > 0) {
+      return { threatLevel: 'ELEVATED', threatColor: 'text-yellow-500/90' };
+    } else {
+      return { threatLevel: 'GUARDED', threatColor: 'text-green-500/90' };
+    }
+  }, [fireClusters]);
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-white/5">
+      {/* Status strip */}
+      <div className="flex items-center justify-between px-3 py-0.5 border-b border-white/5 text-[9px] text-muted-foreground/50 tracking-wider">
+        <span>{totalAcres.toLocaleString()} ACRES BURNING</span>
+        <span>
+          {deployedCount}/{totalResources} RESOURCES DEPLOYED
+        </span>
+        <span className={threatColor}>THREAT: {threatLevel}</span>
+      </div>
+
       <div className="flex items-center gap-3 h-16 px-4">
         {/* Controls */}
         <div className="flex items-center gap-1 shrink-0">
