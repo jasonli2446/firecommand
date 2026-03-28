@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Map from 'react-map-gl/mapbox';
 import DeckGL from '@deck.gl/react';
 import { ScatterplotLayer, PolygonLayer, ArcLayer } from '@deck.gl/layers';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
+import { FlyToInterpolator } from '@deck.gl/core';
 import { useAppStore } from '@/store/app-store';
 import type { FireDetection, FireCluster } from '@/types/fire';
 import type { Resource } from '@/types/resource';
@@ -121,6 +122,25 @@ export function FireMap() {
     selectedClusterId,
     timelinePosition,
   } = useAppStore();
+
+  // Controlled view state for fly-to animations
+  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
+
+  // Fly to selected cluster
+  useEffect(() => {
+    if (!selectedClusterId) return;
+    const cluster = fireClusters.find((c) => c.id === selectedClusterId);
+    if (!cluster) return;
+
+    setViewState((prev) => ({
+      ...prev,
+      longitude: cluster.centroid[0],
+      latitude: cluster.centroid[1],
+      zoom: Math.max(prev.zoom, 8),
+      transitionDuration: 1500,
+      transitionInterpolator: new FlyToInterpolator(),
+    }));
+  }, [selectedClusterId, fireClusters]);
 
   // Use a ref for pulse animation — avoids re-rendering the entire component 60fps
   const pulseRef = useRef(1);
@@ -370,7 +390,8 @@ export function FireMap() {
     <div className="absolute inset-0">
       <DeckGL
         ref={deckRef}
-        initialViewState={INITIAL_VIEW_STATE}
+        viewState={viewState}
+        onViewStateChange={({ viewState: vs }) => setViewState(vs as typeof viewState)}
         controller={true}
         layers={layers}
         getTooltip={getTooltip}
