@@ -39,8 +39,61 @@ interface AppState {
   setShowHelp: (show: boolean) => void;
   deployResource: (resourceId: string, clusterId: string) => void;
   recallResource: (resourceId: string) => void;
-  executeAIPlan: () => void;
+  executeAIPlan: (recommendationText?: string) => void;
   addLogEntry: (type: ActionLogEntry['type'], message: string) => void;
+}
+
+/**
+ * Parse AI recommendation markdown to extract resource type → quantity mappings.
+ * Matches patterns like "3 helicopters", "Deploy 2 engines", "1x air tanker", etc.
+ */
+function parseAIRecommendation(text: string): Record<string, number> {
+  const result: Record<string, number> = {};
+
+  // Map of aliases → canonical resource type
+  const typeAliases: [RegExp, string][] = [
+    [/helicopters?|helis?|rotary.?wing/gi, 'helicopter'],
+    [/air.?tankers?|airtankers?/gi, 'air_tanker'],
+    [/engines?|fire.?engines?|type.?\d+.?engines?/gi, 'engine'],
+    [/hand.?crews?|hotshots?|hand crews?/gi, 'hand_crew'],
+    [/dozers?|bulldozers?/gi, 'dozer'],
+    [/water.?tenders?/gi, 'water_tender'],
+  ];
+
+  // Pattern 1: "N resource_type" e.g. "3 helicopters", "Deploy 2 engines"
+  // Pattern 2: "Nx resource_type" e.g. "2x air tankers"
+  // Pattern 3: resource_type mentioned without number → defaults to 1
+  for (const [aliasPattern, canonicalType] of typeAliases) {
+    // Reset lastIndex for global patterns
+    aliasPattern.lastIndex = 0;
+
+    // Find all mentions of this resource type
+    const mentions = text.match(aliasPattern);
+    if (!mentions) continue;
+
+    let maxCount = 0;
+
+    for (const mention of mentions) {
+      // Look for a number before the mention in a window of ~30 chars
+      const idx = text.indexOf(mention);
+      const before = text.slice(Math.max(0, idx - 30), idx);
+
+      // Check for "N " or "Nx" patterns before the resource name
+      const numberMatch = before.match(/(\d+)\s*x?\s*$/i);
+      if (numberMatch) {
+        maxCount = Math.max(maxCount, parseInt(numberMatch[1], 10));
+      } else {
+        // No explicit number — count as 1 if not already counted higher
+        maxCount = Math.max(maxCount, 1);
+      }
+    }
+
+    if (maxCount > 0) {
+      result[canonicalType] = maxCount;
+    }
+  }
+
+  return result;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -109,17 +162,21 @@ export const useAppStore = create<AppState>((set) => ({
         ].slice(0, 50),
       };
     }),
-  executeAIPlan: () =>
+  executeAIPlan: (recommendationText?: string) =>
     set((state) => {
       if (!state.selectedClusterId) return state;
       const clusterId = state.selectedClusterId;
       const cluster = state.fireClusters.find((c) => c.id === clusterId);
       if (!cluster) return state;
 
-      // Deploy a diverse mix of resources — one of each type when available
-      // This mirrors what the AI actually recommends (mixed asset deployment)
-      const typeQuotas: Record<string, number> =
-        cluster.severity === 'critical'
+      // Parse the AI recommendation to extract what resources it actually suggested
+      const parsed = recommendationText ? parseAIRecommendation(recommendationText) : null;
+      const hasValidParse = parsed && Object.keys(parsed).length > 0;
+
+      // Use parsed AI quantities, or fall back to severity-based defaults
+      const typeQuotas: Record<string, number> = hasValidParse
+        ? parsed
+        : cluster.severity === 'critical'
           ? { helicopter: 2, air_tanker: 1, engine: 3, hand_crew: 2, dozer: 1, water_tender: 1 }
           : cluster.severity === 'high'
           ? { helicopter: 1, air_tanker: 1, engine: 2, hand_crew: 1, dozer: 1, water_tender: 1 }

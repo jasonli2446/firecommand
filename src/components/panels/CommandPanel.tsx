@@ -530,7 +530,7 @@ export function CommandPanel() {
                     }}
                   />
 
-                  <ExecuteButton onExecute={executeAIPlan} />
+                  <ExecuteButton onExecute={() => executeAIPlan(recommendation)} />
                 </>
               )}
 
