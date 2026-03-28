@@ -313,6 +313,14 @@ export function CommandPanel() {
                     (r) => r.assignedClusterId === selectedCluster.id
                   );
                   if (deployedToCluster.length === 0) return null;
+                  const typeCounts: Record<string, number> = {};
+                  for (const r of deployedToCluster) {
+                    typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
+                  }
+                  const typeColors: Record<string, string> = {
+                    engine: '#ef4444', helicopter: '#3b82f6', hand_crew: '#eab308',
+                    air_tanker: '#a855f7', dozer: '#f97316', water_tender: '#06b6d4',
+                  };
                   return (
                     <Card className="bg-white/5 border-white/5">
                       <CardHeader className="pb-2 pt-3 px-3">
@@ -320,7 +328,29 @@ export function CommandPanel() {
                           Deployed Resources ({deployedToCluster.length})
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="px-3 pb-3 space-y-1">
+                      <CardContent className="px-3 pb-3 space-y-2">
+                        {/* Type breakdown bar */}
+                        <div className="flex h-2 rounded-full overflow-hidden bg-white/5">
+                          {Object.entries(typeCounts).map(([type, count]) => (
+                            <div
+                              key={type}
+                              className="h-full transition-all duration-500"
+                              style={{
+                                width: `${(count / deployedToCluster.length) * 100}%`,
+                                backgroundColor: typeColors[type] || '#888',
+                              }}
+                              title={`${count} ${type.replace('_', ' ')}${count > 1 ? 's' : ''}`}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                          {Object.entries(typeCounts).map(([type, count]) => (
+                            <span key={type} className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: typeColors[type] || '#888' }} />
+                              {count} {type.replace('_', ' ')}{count > 1 ? 's' : ''}
+                            </span>
+                          ))}
+                        </div>
                         {deployedToCluster.map((r) => (
                           <div
                             key={r.id}
