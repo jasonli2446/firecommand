@@ -184,6 +184,51 @@ function createContainmentArc(
   return points;
 }
 
+// Create a small wind-direction arrow near a fire cluster
+function createWindArrow(
+  center: [number, number],
+  windFromDeg: number,
+  sizeMiles = 2.5
+): [number, number][] {
+  const [lng, lat] = center;
+  const s = sizeMiles / 69;
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+
+  // Fire spreads in opposite direction from wind source
+  const dir = ((windFromDeg + 180) * Math.PI) / 180;
+  const perp = dir + Math.PI / 2;
+
+  // Offset arrow from cluster center (so it sits beyond the fire dot)
+  const offset = s * 1.4;
+  const cx = lng + (offset * Math.sin(dir)) / cosLat;
+  const cy = lat + offset * Math.cos(dir);
+
+  // Kite/arrow shape: pointy tip forward, narrow tail
+  const tipDist = s * 0.5;
+  const tailDist = s * 0.5;
+  const wingDist = s * 0.18;
+  const notchDist = s * 0.15; // notch in tail for classic arrow look
+
+  return [
+    // Tip
+    [cx + (tipDist * Math.sin(dir)) / cosLat, cy + tipDist * Math.cos(dir)],
+    // Left wing
+    [cx + (wingDist * Math.sin(perp)) / cosLat, cy + wingDist * Math.cos(perp)],
+    // Left inner notch
+    [cx - (notchDist * Math.sin(dir)) / cosLat + (wingDist * 0.3 * Math.sin(perp)) / cosLat,
+     cy - notchDist * Math.cos(dir) + wingDist * 0.3 * Math.cos(perp)],
+    // Tail center
+    [cx - (tailDist * Math.sin(dir)) / cosLat, cy - tailDist * Math.cos(dir)],
+    // Right inner notch
+    [cx - (notchDist * Math.sin(dir)) / cosLat - (wingDist * 0.3 * Math.sin(perp)) / cosLat,
+     cy - notchDist * Math.cos(dir) - wingDist * 0.3 * Math.cos(perp)],
+    // Right wing
+    [cx - (wingDist * Math.sin(perp)) / cosLat, cy - wingDist * Math.cos(perp)],
+    // Close
+    [cx + (tipDist * Math.sin(dir)) / cosLat, cy + tipDist * Math.cos(dir)],
+  ];
+}
+
 export function FireMap() {
   const {
     fireDetections,
@@ -346,6 +391,52 @@ export function FireMap() {
       updateTriggers: {
         getPolygon: timelinePosition,
       },
+    }),
+
+    // Wind direction arrows at each critical/high fire
+    new PolygonLayer<FireCluster>({
+      id: 'wind-arrows',
+      data: fireClusters.filter(
+        (c) => c.severity === 'critical' || c.severity === 'high'
+      ),
+      getPolygon: (d: FireCluster) =>
+        createWindArrow(d.centroid, DEFAULT_WIND_DIR, Math.min(d.totalFRP * 0.01 + 2, 5)),
+      getFillColor: [135, 206, 250, 140] as [number, number, number, number],
+      getLineColor: [135, 206, 250, 200] as [number, number, number, number],
+      lineWidthMinPixels: 1,
+      filled: true,
+      stroked: true,
+    }),
+
+    // Wind direction labels
+    new TextLayer<FireCluster>({
+      id: 'wind-labels',
+      data: fireClusters.filter(
+        (c) => c.severity === 'critical' || c.severity === 'high'
+      ),
+      getPosition: (d: FireCluster) => {
+        const s = Math.min(d.totalFRP * 0.01 + 2, 5) / 69;
+        const cosLat = Math.cos((d.centroid[1] * Math.PI) / 180);
+        const dir = ((DEFAULT_WIND_DIR + 180) * Math.PI) / 180;
+        const offset = s * 2.2;
+        return [
+          d.centroid[0] + (offset * Math.sin(dir)) / cosLat,
+          d.centroid[1] + offset * Math.cos(dir),
+        ];
+      },
+      getText: () => `WIND`,
+      getSize: 9,
+      getColor: [135, 206, 250, 180] as [number, number, number, number],
+      getTextAnchor: 'middle' as const,
+      getAlignmentBaseline: 'center' as const,
+      fontWeight: 700,
+      fontFamily: 'system-ui, sans-serif',
+      billboard: true,
+      sizeMinPixels: 8,
+      sizeMaxPixels: 11,
+      fontSettings: { sdf: true },
+      outlineWidth: 2,
+      outlineColor: [0, 0, 0, 200] as [number, number, number, number],
     }),
 
     // Threat pulse rings for critical fires — radar-style expanding rings
@@ -648,6 +739,16 @@ export function FireMap() {
     return null;
   }, [containmentMap, resources]);
 
+  // Click empty space to deselect
+  const handleMapClick = useCallback(
+    (info: PickingInfo) => {
+      if (!info.object && selectedClusterId) {
+        selectCluster(null);
+      }
+    },
+    [selectedClusterId, selectCluster]
+  );
+
   return (
     <div className="absolute inset-0">
       <DeckGL
@@ -657,6 +758,7 @@ export function FireMap() {
         controller={true}
         layers={layers}
         getTooltip={getTooltip}
+        onClick={handleMapClick}
       >
         <Map
           mapboxAccessToken={MAPBOX_TOKEN}
