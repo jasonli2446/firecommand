@@ -640,6 +640,26 @@ export function CommandPanel() {
                     }}
                   />
 
+                  {!isAnalyzing && (
+                    <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-blue-500/5 border border-blue-500/10">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                        <span className="text-[11px] text-muted-foreground">Analysis Confidence</span>
+                      </div>
+                      <span className="text-sm font-bold text-emerald-400 tabular-nums">
+                        {(() => {
+                          const cluster = fireClusters.find((c) => c.id === selectedClusterId);
+                          if (!cluster) return '—';
+                          const base = 72;
+                          const detBonus = Math.min(cluster.points.length * 2, 10);
+                          const weatherBonus = weather ? 8 : 0;
+                          const recentBonus = (Date.now() - cluster.lastDetected.getTime()) < 3600000 ? 5 : 0;
+                          return `${Math.min(95, base + detBonus + weatherBonus + recentBonus)}%`;
+                        })()}
+                      </span>
+                    </div>
+                  )}
+
                   <ExecuteButton onExecute={() => executeAIPlan(recommendation)} />
                 </>
               )}
