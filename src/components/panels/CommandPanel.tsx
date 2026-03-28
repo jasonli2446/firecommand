@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check, FileText, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // ScrollArea from base-ui doesn't scroll in flex layouts — use native overflow
@@ -75,6 +75,15 @@ export function CommandPanel() {
     selectedCluster ? selectedCluster.centroid[1] : null,
     selectedCluster ? selectedCluster.centroid[0] : null
   );
+
+  // Push wind primitives to store so FireMap can use real wind direction
+  const setSelectedWind = useAppStore((s) => s.setSelectedWind);
+  useEffect(() => {
+    setSelectedWind(
+      weather?.windDirection ?? null,
+      weather?.windSpeed ?? null
+    );
+  }, [weather?.windDirection, weather?.windSpeed, setSelectedWind]);
 
   if (!panelOpen) return null;
 

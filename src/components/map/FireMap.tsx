@@ -237,6 +237,8 @@ export function FireMap() {
     evacuationZones,
     selectCluster,
     selectedClusterId,
+    selectedWindDirection,
+    selectedWindSpeed,
     timelinePosition,
   } = useAppStore();
 
@@ -342,6 +344,15 @@ export function FireMap() {
     [selectCluster]
   );
 
+  // Use real wind direction for selected cluster, default for others
+  const getWindDir = useCallback(
+    (clusterId: string) =>
+      clusterId === selectedClusterId && selectedWindDirection !== null
+        ? selectedWindDirection
+        : DEFAULT_WIND_DIR,
+    [selectedClusterId, selectedWindDirection]
+  );
+
   const layers = useMemo(() => [
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     new (HeatmapLayer as any)({
@@ -377,7 +388,7 @@ export function FireMap() {
           : Math.min(d.totalFRP * 0.01 + 2, 8);
         // Scale from 20% to 100% based on timeline position
         const scale = 0.2 + 0.8 * Math.pow(timelinePosition, 0.7);
-        return createSpreadWedge(d.centroid, DEFAULT_WIND_DIR, baseRadius * scale);
+        return createSpreadWedge(d.centroid, getWindDir(d.id), baseRadius * scale);
       },
       getFillColor: (d: FireCluster) =>
         d.severity === 'critical'
@@ -395,7 +406,7 @@ export function FireMap() {
       filled: true,
       stroked: true,
       updateTriggers: {
-        getPolygon: timelinePosition,
+        getPolygon: [timelinePosition, selectedClusterId, selectedWindDirection],
       },
     }),
 
@@ -406,12 +417,15 @@ export function FireMap() {
         (c) => c.severity !== 'low'
       ),
       getPolygon: (d: FireCluster) =>
-        createWindArrow(d.centroid, DEFAULT_WIND_DIR, Math.min(d.totalFRP * 0.01 + 2, 5)),
+        createWindArrow(d.centroid, getWindDir(d.id), Math.min(d.totalFRP * 0.01 + 2, 5)),
       getFillColor: [135, 206, 250, 140] as [number, number, number, number],
       getLineColor: [135, 206, 250, 200] as [number, number, number, number],
       lineWidthMinPixels: 1,
       filled: true,
       stroked: true,
+      updateTriggers: {
+        getPolygon: [selectedClusterId, selectedWindDirection],
+      },
     }),
 
     // Wind direction labels
@@ -423,14 +437,22 @@ export function FireMap() {
       getPosition: (d: FireCluster) => {
         const s = Math.min(d.totalFRP * 0.01 + 2, 5) / 69;
         const cosLat = Math.cos((d.centroid[1] * Math.PI) / 180);
-        const dir = ((DEFAULT_WIND_DIR + 180) * Math.PI) / 180;
+        const windDir = getWindDir(d.id);
+        const dir = ((windDir + 180) * Math.PI) / 180;
         const offset = s * 2.2;
         return [
           d.centroid[0] + (offset * Math.sin(dir)) / cosLat,
           d.centroid[1] + offset * Math.cos(dir),
         ];
       },
-      getText: () => `WIND`,
+      getText: (d: FireCluster) => {
+        const windDir = getWindDir(d.id);
+        if (d.id === selectedClusterId && selectedWindSpeed !== null) {
+          return `${selectedWindSpeed} mph`;
+        }
+        const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+        return dirs[Math.round(((windDir + 180) % 360) / 45) % 8];
+      },
       getSize: 9,
       getColor: [135, 206, 250, 180] as [number, number, number, number],
       getTextAnchor: 'middle' as const,
@@ -443,6 +465,10 @@ export function FireMap() {
       fontSettings: { sdf: true },
       outlineWidth: 2,
       outlineColor: [0, 0, 0, 200] as [number, number, number, number],
+      updateTriggers: {
+        getPosition: [selectedClusterId, selectedWindDirection],
+        getText: [selectedClusterId, selectedWindSpeed, selectedWindDirection],
+      },
     }),
 
     // Threat pulse rings for critical fires — radar-style expanding rings
@@ -693,7 +719,7 @@ export function FireMap() {
         getPosition: animTickRef.current,
       },
     }),
-  ], [filteredDetections, fireClusters, resources, evacuationZones, selectedClusterId, handleClusterClick, timelinePosition, containmentMap, deployedCount]);
+  ], [filteredDetections, fireClusters, resources, evacuationZones, selectedClusterId, selectedWindDirection, selectedWindSpeed, handleClusterClick, getWindDir, timelinePosition, containmentMap, deployedCount]);
 
   const getTooltip = useCallback((info: PickingInfo) => {
     if (!info.object) return null;
@@ -769,6 +795,18 @@ export function FireMap() {
         <Map
           mapboxAccessToken={MAPBOX_TOKEN}
           mapStyle="mapbox://styles/mapbox/dark-v11"
+          onLoad={(e) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const map = e.target as any;
+            map.setFog({
+              range: [1, 8],
+              color: 'rgba(10, 10, 15, 0.85)',
+              'high-color': 'rgba(20, 20, 40, 0.5)',
+              'horizon-blend': 0.04,
+              'space-color': 'rgba(5, 5, 10, 1)',
+              'star-intensity': 0.15,
+            });
+          }}
         />
       </DeckGL>
     </div>

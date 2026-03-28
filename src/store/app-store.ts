@@ -25,6 +25,8 @@ interface AppState {
   isPlaying: boolean;
   playbackSpeed: number;
   showHelp: boolean;
+  selectedWindDirection: number | null;
+  selectedWindSpeed: number | null;
 
   setFireDetections: (detections: FireDetection[]) => void;
   setFireClusters: (clusters: FireCluster[]) => void;
@@ -37,6 +39,7 @@ interface AppState {
   setIsPlaying: (playing: boolean) => void;
   setPlaybackSpeed: (speed: number) => void;
   setShowHelp: (show: boolean) => void;
+  setSelectedWind: (direction: number | null, speed: number | null) => void;
   deployResource: (resourceId: string, clusterId: string) => void;
   recallResource: (resourceId: string) => void;
   executeAIPlan: (recommendationText?: string) => void;
@@ -110,6 +113,8 @@ export const useAppStore = create<AppState>((set) => ({
   isPlaying: false,
   playbackSpeed: 1,
   showHelp: false,
+  selectedWindDirection: null,
+  selectedWindSpeed: null,
 
   setFireDetections: (detections) => set({ fireDetections: detections }),
   setFireClusters: (clusters) => set({ fireClusters: clusters }),
@@ -122,6 +127,7 @@ export const useAppStore = create<AppState>((set) => ({
   setIsPlaying: (playing) => set({ isPlaying: playing }),
   setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
   setShowHelp: (show) => set({ showHelp: show }),
+  setSelectedWind: (direction, speed) => set({ selectedWindDirection: direction, selectedWindSpeed: speed }),
   addLogEntry: (type, message) =>
     set((state) => ({
       actionLog: [
