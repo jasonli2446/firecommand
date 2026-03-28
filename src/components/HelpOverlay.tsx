@@ -10,6 +10,7 @@ const SHORTCUTS = [
   { key: 'Esc', action: 'Deselect fire / close panel' },
   { key: '1 / 2 / 4', action: 'Playback speed' },
   { key: '\u2190 / \u2192', action: 'Step timeline back / forward' },
+  { key: 'T', action: 'Auto-tour critical fires' },
 ];
 
 export function HelpOverlay() {

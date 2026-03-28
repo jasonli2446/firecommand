@@ -92,6 +92,14 @@ export function MapLegend() {
                 <span className="h-2.5 w-4 rounded-sm bg-red-500/20 border border-red-500/40" />
                 <span className="text-[10px] text-gray-400">Spread Pred.</span>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-4 rounded-sm bg-sky-400/30 border border-sky-400/50" />
+                <span className="text-[10px] text-gray-400">Wind Dir.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-4 rounded-full bg-emerald-500/30 border-2 border-emerald-500/60" />
+                <span className="text-[10px] text-gray-400">Containment</span>
+              </div>
             </div>
           </div>
         </div>

@@ -27,6 +27,18 @@ export default function Home() {
 
   const addLogEntry = useAppStore((s) => s.addLogEntry);
 
+  // 'T' key toggles auto-tour
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 't' || e.key === 'T') {
+        tourActive ? stopTour() : startTour();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [tourActive, startTour, stopTour]);
+
   // Generate resources once on mount
   useEffect(() => {
     setResources(generateResources());
