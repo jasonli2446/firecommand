@@ -11,12 +11,14 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { NotificationContainer } from '@/components/Notifications';
 import { useFireData } from '@/hooks/useFireData';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useAutoTour } from '@/hooks/useAutoTour';
 import { useAppStore } from '@/store/app-store';
 import { generateResources } from '@/lib/mock-resources';
 
 export default function Home() {
   const { isLoading, lastUpdated } = useFireData();
   useKeyboardShortcuts();
+  const { tourActive, startTour, stopTour } = useAutoTour();
   const setResources = useAppStore((s) => s.setResources);
   const fireClusters = useAppStore((s) => s.fireClusters);
   const resources = useAppStore((s) => s.resources);
@@ -62,6 +64,32 @@ export default function Home() {
     setResources(updated);
   }, [fireClusters.length]); // Only run when clusters first load
 
+  // Auto-transition en_route → deployed after travel animation (8s)
+  useEffect(() => {
+    const enRouteWithTime = resources.filter(
+      (r) => r.status === 'en_route' && r.deployedAt
+    );
+    if (!enRouteWithTime.length) return;
+
+    const TRAVEL_DURATION = 8000;
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const store = useAppStore.getState();
+      const toTransition = store.resources.filter(
+        (r) => r.status === 'en_route' && r.deployedAt && now - r.deployedAt >= TRAVEL_DURATION
+      );
+      if (toTransition.length > 0) {
+        const ids = new Set(toTransition.map((r) => r.id));
+        store.setResources(
+          store.resources.map((r) =>
+            ids.has(r.id) ? { ...r, status: 'deployed' as const } : r
+          )
+        );
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resources]);
+
   if (isLoading && !fireClusters.length) {
     return <LoadingScreen />;
   }
@@ -69,7 +97,7 @@ export default function Home() {
   return (
     <div className="relative h-full w-full">
       <FireMap />
-      <AppHeader lastUpdated={lastUpdated} isLoading={isLoading} />
+      <AppHeader lastUpdated={lastUpdated} isLoading={isLoading} tourActive={tourActive} onStartTour={startTour} onStopTour={stopTour} />
       <MapLegend />
       <MapStatsOverlay />
       <CommandPanel />

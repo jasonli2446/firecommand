@@ -357,9 +357,11 @@ export function CommandPanel() {
               {!recommendation && !isAnalyzing && (
                 <div className="text-center text-muted-foreground py-8">
                   <Brain className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm font-medium mb-1">AI Agent</p>
+                  <p className="text-sm font-medium mb-1">AIP Agent</p>
                   <p className="text-xs mb-4">
-                    Select a fire and analyze the situation
+                    {selectedCluster
+                      ? `Analyze ${selectedCluster.name} with Palantir AIP`
+                      : 'Select a fire to analyze with Palantir AIP'}
                   </p>
                   <Button
                     className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -377,7 +379,7 @@ export function CommandPanel() {
                 <div className="space-y-3 py-2">
                   <div className="flex items-center gap-2 text-sm text-blue-400">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Analyzing operational picture...</span>
+                    <span>AIP Agent analyzing operational picture...</span>
                   </div>
                   {/* Skeleton loading bars */}
                   <div className="space-y-2">
@@ -388,7 +390,7 @@ export function CommandPanel() {
                     <div className="h-3 bg-white/5 rounded animate-pulse w-4/5" style={{ animationDelay: '0.3s' }} />
                   </div>
                   <div className="text-[10px] text-muted-foreground/50">
-                    Processing fire data, weather conditions, and resource availability...
+                    Querying Palantir AIP Agent with fire data, weather, and resources...
                   </div>
                 </div>
               )}
@@ -570,15 +572,35 @@ function formatMarkdown(text: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
+    // --- horizontal rules
+    .replace(
+      /^---+$/gm,
+      '<hr class="border-white/10 my-3" />'
+    )
+    // # top-level headings
+    .replace(
+      /^# (.+)$/gm,
+      '<h2 class="text-white font-bold text-base mt-3 mb-2 tracking-wide">$1</h2>'
+    )
     // ## headings
     .replace(
       /^## (.+)$/gm,
       '<h3 class="text-orange-400 font-bold text-sm mt-4 mb-2 pb-1 border-b border-white/10">$1</h3>'
     )
+    // ### sub-headings
+    .replace(
+      /^### (.+)$/gm,
+      '<h4 class="text-blue-400 font-semibold text-xs mt-3 mb-1.5 uppercase tracking-wider">$1</h4>'
+    )
     // **bold**
     .replace(
       /\*\*(.+?)\*\*/g,
       '<strong class="text-white">$1</strong>'
+    )
+    // *italic*
+    .replace(
+      /\*([^*]+)\*/g,
+      '<em class="text-gray-300 italic">$1</em>'
     )
     // Numbered lists: 1. text
     .replace(

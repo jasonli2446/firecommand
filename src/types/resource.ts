@@ -12,4 +12,5 @@ export interface Resource {
   assignedClusterId: string | null;
   capacity: number;
   eta?: string;
+  deployedAt?: number;
 }

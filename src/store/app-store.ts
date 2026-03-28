@@ -64,7 +64,7 @@ export const useAppStore = create<AppState>((set) => ({
       }
       return {
         resources: state.resources.map((r) =>
-          r.id === resourceId ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId } : r
+          r.id === resourceId ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId, deployedAt: Date.now() } : r
         ),
       };
     }),
@@ -76,7 +76,7 @@ export const useAppStore = create<AppState>((set) => ({
       }
       return {
         resources: state.resources.map((r) =>
-          r.id === resourceId ? { ...r, status: 'available' as const, assignedClusterId: null } : r
+          r.id === resourceId ? { ...r, status: 'available' as const, assignedClusterId: null, deployedAt: undefined } : r
         ),
       };
     }),
@@ -119,7 +119,7 @@ export const useAppStore = create<AppState>((set) => ({
       return {
         resources: state.resources.map((r) =>
           toDeploy.has(r.id)
-            ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId }
+            ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId, deployedAt: Date.now() }
             : r
         ),
       };

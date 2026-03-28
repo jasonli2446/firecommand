@@ -1,6 +1,6 @@
 'use client';
 
-import { Flame, Radio, Satellite, PanelRightOpen, PanelRightClose, AlertTriangle } from 'lucide-react';
+import { Flame, Radio, Satellite, PanelRightOpen, PanelRightClose, AlertTriangle, Compass } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
@@ -9,9 +9,12 @@ import { useMemo } from 'react';
 interface AppHeaderProps {
   lastUpdated: Date | null;
   isLoading: boolean;
+  tourActive?: boolean;
+  onStartTour?: () => void;
+  onStopTour?: () => void;
 }
 
-export function AppHeader({ lastUpdated, isLoading }: AppHeaderProps) {
+export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onStopTour }: AppHeaderProps) {
   const { fireClusters, resources, evacuationZones, panelOpen, setPanelOpen } =
     useAppStore();
 
@@ -88,6 +91,10 @@ export function AppHeader({ lastUpdated, isLoading }: AppHeaderProps) {
               <Satellite className="h-3.5 w-3.5" />
               <span>VIIRS NOAA-20</span>
             </div>
+            <div className="hidden md:flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-blue-500" />
+              <span className="text-blue-400 font-medium">AIP</span>
+            </div>
             {lastUpdated && (
               <span className="hidden md:inline text-muted-foreground">
                 {lastUpdated.toLocaleTimeString()}
@@ -108,6 +115,27 @@ export function AppHeader({ lastUpdated, isLoading }: AppHeaderProps) {
             <Badge variant="secondary" className="text-xs hidden sm:flex">
               {activeResources} deployed
             </Badge>
+
+            {tourActive ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-xs text-amber-400 hover:text-amber-300 border border-amber-500/30 animate-pulse"
+                onClick={onStopTour}
+              >
+                TOUR
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-white"
+                onClick={onStartTour}
+                title="Auto-tour critical fires (T)"
+              >
+                <Compass className="h-4 w-4" />
+              </Button>
+            )}
 
             <Button
               variant="ghost"

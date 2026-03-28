@@ -277,14 +277,14 @@ async function callPalantirAgent(body: RequestBody): Promise<ReadableStream> {
 
   // Create a session
   const sessionRes = await fetch(
-    `${PALANTIR_FOUNDRY_URL}/api/v2/aipAgents/${PALANTIR_AGENT_RID}/sessions`,
+    `${PALANTIR_FOUNDRY_URL}/api/v2/aipAgents/agents/${PALANTIR_AGENT_RID}/sessions?preview=true`,
     {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${PALANTIR_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ agentVersion: '1.0' }),
     }
   );
 
@@ -295,12 +295,12 @@ async function callPalantirAgent(body: RequestBody): Promise<ReadableStream> {
     );
   }
 
-  const session = (await sessionRes.json()) as { sessionRid: string };
-  const sessionId = session.sessionRid;
+  const session = (await sessionRes.json()) as { rid: string };
+  const sessionId = session.rid;
 
   // Send message and get response
   const continueRes = await fetch(
-    `${PALANTIR_FOUNDRY_URL}/api/v2/aipAgents/${PALANTIR_AGENT_RID}/sessions/${sessionId}/blockingContinue`,
+    `${PALANTIR_FOUNDRY_URL}/api/v2/aipAgents/agents/${PALANTIR_AGENT_RID}/sessions/${sessionId}/blockingContinue?preview=true`,
     {
       method: 'POST',
       headers: {
@@ -323,12 +323,14 @@ async function callPalantirAgent(body: RequestBody): Promise<ReadableStream> {
   }
 
   const result = (await continueRes.json()) as {
+    agentMarkdownResponse?: string;
     agentMarkdown?: string;
     messageContents?: Array<{ text?: string }>;
   };
 
   // Extract text from the response
   const responseText =
+    result.agentMarkdownResponse ||
     result.agentMarkdown ||
     result.messageContents?.map((m) => m.text).join('\n') ||
     'No response from AI agent.';

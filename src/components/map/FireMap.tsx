@@ -233,20 +233,20 @@ export function FireMap() {
     }),
 
     // Fire spread prediction wedges (critical/high severity only)
+    // Scale with timeline position so fires visually "grow" during scrub
     new PolygonLayer<FireCluster>({
       id: 'fire-spread-prediction',
       data: fireClusters.filter(
         (c) => c.severity === 'critical' || c.severity === 'high'
       ),
-      getPolygon: (d: FireCluster) =>
-        createSpreadWedge(
-          d.centroid,
-          DEFAULT_WIND_DIR,
-          // Spread radius based on severity and FRP
-          d.severity === 'critical'
-            ? Math.min(d.totalFRP * 0.02 + 5, 20)
-            : Math.min(d.totalFRP * 0.015 + 3, 12)
-        ),
+      getPolygon: (d: FireCluster) => {
+        const baseRadius = d.severity === 'critical'
+          ? Math.min(d.totalFRP * 0.02 + 5, 20)
+          : Math.min(d.totalFRP * 0.015 + 3, 12);
+        // Scale from 20% to 100% based on timeline position
+        const scale = 0.2 + 0.8 * Math.pow(timelinePosition, 0.7);
+        return createSpreadWedge(d.centroid, DEFAULT_WIND_DIR, baseRadius * scale);
+      },
       getFillColor: (d: FireCluster) =>
         d.severity === 'critical'
           ? [255, 60, 30, 18] as [number, number, number, number]
@@ -258,6 +258,61 @@ export function FireMap() {
       lineWidthMinPixels: 1,
       filled: true,
       stroked: true,
+      updateTriggers: {
+        getPolygon: timelinePosition,
+      },
+    }),
+
+    // Threat pulse rings for critical fires — radar-style expanding rings
+    new ScatterplotLayer<FireCluster>({
+      id: 'threat-pulse-ring-1',
+      data: fireClusters.filter((c) => c.severity === 'critical'),
+      getPosition: (d: FireCluster) => d.centroid,
+      getRadius: (d: FireCluster) => {
+        const base = Math.sqrt(d.totalFRP + 1) * 150;
+        const phase = (Date.now() % 3000) / 3000;
+        return base * (1 + phase * 2);
+      },
+      getFillColor: [0, 0, 0, 0] as [number, number, number, number],
+      stroked: true,
+      getLineColor: () => {
+        const phase = (Date.now() % 3000) / 3000;
+        const alpha = Math.round(120 * (1 - phase));
+        return [255, 50, 50, alpha] as [number, number, number, number];
+      },
+      lineWidthMinPixels: 2,
+      radiusMinPixels: 8,
+      radiusMaxPixels: 120,
+      updateTriggers: {
+        getRadius: Date.now(),
+        getLineColor: Date.now(),
+      },
+    }),
+
+    // Second pulse ring (offset phase)
+    new ScatterplotLayer<FireCluster>({
+      id: 'threat-pulse-ring-2',
+      data: fireClusters.filter((c) => c.severity === 'critical'),
+      getPosition: (d: FireCluster) => d.centroid,
+      getRadius: (d: FireCluster) => {
+        const base = Math.sqrt(d.totalFRP + 1) * 150;
+        const phase = ((Date.now() + 1500) % 3000) / 3000;
+        return base * (1 + phase * 2);
+      },
+      getFillColor: [0, 0, 0, 0] as [number, number, number, number],
+      stroked: true,
+      getLineColor: () => {
+        const phase = ((Date.now() + 1500) % 3000) / 3000;
+        const alpha = Math.round(80 * (1 - phase));
+        return [255, 50, 50, alpha] as [number, number, number, number];
+      },
+      lineWidthMinPixels: 1,
+      radiusMinPixels: 8,
+      radiusMaxPixels: 120,
+      updateTriggers: {
+        getRadius: Date.now(),
+        getLineColor: Date.now(),
+      },
     }),
 
     new PolygonLayer<EvacuationZone>({
@@ -367,7 +422,36 @@ export function FireMap() {
       getHeight: 0.3,
       greatCircle: false,
     }),
-  ], [filteredDetections, fireClusters, resources, evacuationZones, selectedClusterId, handleClusterClick]);
+
+    // Animated moving dots for en_route resources
+    new ScatterplotLayer<Resource>({
+      id: 'moving-resources',
+      data: resources.filter((r) => r.status === 'en_route' && r.assignedClusterId && r.deployedAt),
+      getPosition: (d: Resource) => {
+        const cluster = fireClusters.find((c) => c.id === d.assignedClusterId);
+        if (!cluster || !d.deployedAt) return [d.longitude, d.latitude];
+        const TRAVEL_DURATION = 8000; // 8 seconds travel animation
+        const elapsed = Date.now() - d.deployedAt;
+        const t = Math.min(1, elapsed / TRAVEL_DURATION);
+        // Ease-in-out cubic
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        return [
+          d.longitude + (cluster.centroid[0] - d.longitude) * ease,
+          d.latitude + (cluster.centroid[1] - d.latitude) * ease,
+        ];
+      },
+      getFillColor: [250, 204, 21, 255] as [number, number, number, number],
+      getRadius: 800,
+      radiusMinPixels: 4,
+      radiusMaxPixels: 8,
+      stroked: true,
+      getLineColor: [255, 255, 255, 200] as [number, number, number, number],
+      lineWidthMinPixels: 1,
+      updateTriggers: {
+        getPosition: Date.now(),
+      },
+    }),
+  ], [filteredDetections, fireClusters, resources, evacuationZones, selectedClusterId, handleClusterClick, timelinePosition]);
 
   const getTooltip = useCallback((info: PickingInfo) => {
     if (!info.object) return null;
