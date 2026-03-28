@@ -243,11 +243,15 @@ export const useAppStore = create<AppState>((set) => ({
       ];
 
       return {
-        resources: state.resources.map((r) =>
-          toDeploy.has(r.id)
-            ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId, deployedAt: Date.now() }
-            : r
-        ),
+        resources: (() => {
+          const deployIds = [...toDeploy];
+          return state.resources.map((r) => {
+            const idx = deployIds.indexOf(r.id);
+            return idx >= 0
+              ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId, deployedAt: Date.now() + idx * 300 }
+              : r;
+          });
+        })(),
         actionLog: [...logEntries, ...state.actionLog].slice(0, 50),
       };
     }),
