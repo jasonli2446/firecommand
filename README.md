@@ -4,6 +4,33 @@
 
 FireCommand unifies live satellite fire detections, real-time weather data, AI-powered tactical analysis, and resource deployment into a single operational picture. Incident commanders get an integrated view of the fire situation with actionable intelligence.
 
+## Screenshots
+
+### Command Overview
+Full operational picture with live satellite fire detections, heatmap visualization, fire cluster markers, and the command panel showing operational summary, fire severity list, resource readiness, and Palantir Foundry ontology graph.
+
+![Command Overview](public/screenshots/overview.png)
+
+### Fire Detail View
+Selecting a fire cluster reveals detailed intel: fire radiative power, estimated acreage, detection count, FRP trend sparkline, containment progress, and real-time NWS weather with wind compass.
+
+![Fire Detail](public/screenshots/fire-selected.png)
+
+### AI Tactical Analysis
+Palantir AIP Agent generates a full tactical analysis including situation assessment, priority actions, resource deployment recommendations, evacuation orders, and fire behavior predictions with confidence scoring.
+
+![AI Analysis](public/screenshots/ai-analysis.png)
+
+### Resource Management
+45 resources across 6 types (engines, helicopters, hand crews, air tankers, dozers, water tenders) with deploy/recall controls and real-time status tracking.
+
+![Resources](public/screenshots/resources.png)
+
+### Resource Deployment
+Executing AI recommendations deploys resources with animated arc lines from base locations to the fire, staggered timing for cascade effect, and activity log updates.
+
+![Resource Deployment](public/screenshots/resource-deployment.png)
+
 ## Features
 
 - **Live Satellite Data** - NASA FIRMS VIIRS NOAA-20 fire detections updated every 15 minutes
