@@ -5,7 +5,9 @@ import { useAppStore } from '@/store/app-store';
 import { Flame, Users, Truck, Wind } from 'lucide-react';
 
 export function MapStatsOverlay() {
-  const { fireClusters, resources, evacuationZones } = useAppStore();
+  const fireClusters = useAppStore((s) => s.fireClusters);
+  const resources = useAppStore((s) => s.resources);
+  const evacuationZones = useAppStore((s) => s.evacuationZones);
 
   const totalAcres = fireClusters.reduce(
     (acc, c) => acc + c.estimatedAcres,

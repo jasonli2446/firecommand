@@ -12,7 +12,16 @@ const directionToDegrees: Record<string, number> = {
   W: 270, WNW: 292.5, NW: 315, NNW: 337.5,
 };
 
+// Server-side cache — weather doesn't change fast, cache for 30 min
+const weatherCache = new Map<string, { data: WeatherCondition | null; expires: number }>();
+const WEATHER_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 export async function fetchWeather(lat: number, lon: number): Promise<WeatherCondition | null> {
+  // Round to 2 decimal places for cache key — nearby coords share weather
+  const key = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+  const cached = weatherCache.get(key);
+  if (cached && Date.now() < cached.expires) return cached.data;
+
   try {
     // Step 1: Get grid info
     const pointRes = await fetch(`https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`, {
@@ -39,7 +48,7 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherCon
     const temperature = period.temperature;
     const humidity = period.relativeHumidity?.value ?? 30;
 
-    return {
+    const result: WeatherCondition = {
       latitude: lat,
       longitude: lon,
       windSpeed,
@@ -50,6 +59,8 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherCon
       forecastTime: new Date(period.startTime),
       isFireWeatherWarning: windSpeed > 25 || humidity < 15,
     };
+    weatherCache.set(key, { data: result, expires: Date.now() + WEATHER_CACHE_TTL });
+    return result;
   } catch {
     return null;
   }

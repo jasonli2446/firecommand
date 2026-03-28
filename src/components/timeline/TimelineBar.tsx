@@ -9,17 +9,15 @@ import { useEffect, useMemo, useRef } from 'react';
 const SPARKLINE_BINS = 80;
 
 export function TimelineBar() {
-  const {
-    fireDetections,
-    fireClusters,
-    resources,
-    timelinePosition,
-    isPlaying,
-    playbackSpeed,
-    setTimelinePosition,
-    setIsPlaying,
-    setPlaybackSpeed,
-  } = useAppStore();
+  const fireDetections = useAppStore((s) => s.fireDetections);
+  const fireClusters = useAppStore((s) => s.fireClusters);
+  const resources = useAppStore((s) => s.resources);
+  const timelinePosition = useAppStore((s) => s.timelinePosition);
+  const isPlaying = useAppStore((s) => s.isPlaying);
+  const playbackSpeed = useAppStore((s) => s.playbackSpeed);
+  const setTimelinePosition = useAppStore((s) => s.setTimelinePosition);
+  const setIsPlaying = useAppStore((s) => s.setIsPlaying);
+  const setPlaybackSpeed = useAppStore((s) => s.setPlaybackSpeed);
 
   // Use ref for playback to avoid stale closures in interval
   const posRef = useRef(timelinePosition);

@@ -66,19 +66,17 @@ function getContainment(clusterId: string, resources: { type: string; status: st
 }
 
 export function CommandPanel() {
-  const {
-    fireClusters,
-    resources,
-    evacuationZones,
-    selectedClusterId,
-    panelOpen,
-    activeTab,
-    setPanelOpen,
-    setActiveTab,
-    deployResource,
-    recallResource,
-    executeAIPlan,
-  } = useAppStore();
+  const fireClusters = useAppStore((s) => s.fireClusters);
+  const resources = useAppStore((s) => s.resources);
+  const evacuationZones = useAppStore((s) => s.evacuationZones);
+  const selectedClusterId = useAppStore((s) => s.selectedClusterId);
+  const panelOpen = useAppStore((s) => s.panelOpen);
+  const activeTab = useAppStore((s) => s.activeTab);
+  const setPanelOpen = useAppStore((s) => s.setPanelOpen);
+  const setActiveTab = useAppStore((s) => s.setActiveTab);
+  const deployResource = useAppStore((s) => s.deployResource);
+  const recallResource = useAppStore((s) => s.recallResource);
+  const executeAIPlan = useAppStore((s) => s.executeAIPlan);
 
   const { isAnalyzing, recommendation, error, analyze, clearRecommendation } =
     useAIAgent();

@@ -15,8 +15,12 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onStopTour }: AppHeaderProps) {
-  const { fireClusters, resources, panelOpen, setPanelOpen, mapStyle, setMapStyle } =
-    useAppStore();
+  const fireClusters = useAppStore((s) => s.fireClusters);
+  const resources = useAppStore((s) => s.resources);
+  const panelOpen = useAppStore((s) => s.panelOpen);
+  const setPanelOpen = useAppStore((s) => s.setPanelOpen);
+  const mapStyle = useAppStore((s) => s.mapStyle);
+  const setMapStyle = useAppStore((s) => s.setMapStyle);
 
   const criticalCount = fireClusters.filter(
     (c) => c.severity === 'critical'

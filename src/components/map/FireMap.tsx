@@ -188,22 +188,20 @@ function createContainmentArc(
 }
 
 export function FireMap() {
-  const {
-    fireDetections,
-    fireClusters,
-    resources,
-    evacuationZones,
-    selectCluster,
-    selectedClusterId,
-    selectedWindDirection,
-    selectedWindSpeed,
-    timelinePosition,
-    tourActive,
-    tourStep,
-    pendingFlyTo,
-    setPendingFlyTo,
-    mapStyle,
-  } = useAppStore();
+  // Individual selectors — only re-render when the specific slice changes
+  const fireDetections = useAppStore((s) => s.fireDetections);
+  const fireClusters = useAppStore((s) => s.fireClusters);
+  const resources = useAppStore((s) => s.resources);
+  const evacuationZones = useAppStore((s) => s.evacuationZones);
+  const selectCluster = useAppStore((s) => s.selectCluster);
+  const selectedClusterId = useAppStore((s) => s.selectedClusterId);
+  const selectedWindDirection = useAppStore((s) => s.selectedWindDirection);
+  const timelinePosition = useAppStore((s) => s.timelinePosition);
+  const tourActive = useAppStore((s) => s.tourActive);
+  const tourStep = useAppStore((s) => s.tourStep);
+  const pendingFlyTo = useAppStore((s) => s.pendingFlyTo);
+  const setPendingFlyTo = useAppStore((s) => s.setPendingFlyTo);
+  const mapStyle = useAppStore((s) => s.mapStyle);
 
   // Controlled view state for fly-to animations
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
@@ -291,15 +289,17 @@ export function FireMap() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const deckRef = useRef<any>(null);
   const coordsRef = useRef<HTMLDivElement>(null);
+  const isInteractingRef = useRef(false);
 
   useEffect(() => {
     let frame: number;
     const start = Date.now();
     let lastDraw = 0;
-    const FRAME_INTERVAL = 33; // ~30fps instead of 60fps
+    const FRAME_INTERVAL = 50; // ~20fps for pulse — enough for smooth animation
     const animate = () => {
       const now = Date.now();
-      if (now - lastDraw >= FRAME_INTERVAL) {
+      // Skip animation redraws during active map interaction (pan/zoom)
+      if (!isInteractingRef.current && now - lastDraw >= FRAME_INTERVAL) {
         lastDraw = now;
         const elapsed = (now - start) / 1000;
         pulseRef.current = 1 + 0.15 * Math.sin(elapsed * 2);
@@ -385,6 +385,53 @@ export function FireMap() {
     [resources]
   );
 
+  // Pre-filter and cache arrays to avoid new refs in layer data props
+  const perimeterClusters = useMemo(
+    () => fireClusters.filter((c) => c.points.length >= 3),
+    [fireClusters]
+  );
+  const nonLowClusters = useMemo(
+    () => fireClusters.filter((c) => c.severity !== 'low'),
+    [fireClusters]
+  );
+  const criticalClusters = useMemo(
+    () => fireClusters.filter((c) => c.severity === 'critical'),
+    [fireClusters]
+  );
+  const selectedClusterArr = useMemo(
+    () => fireClusters.filter((c) => c.id === selectedClusterId),
+    [fireClusters, selectedClusterId]
+  );
+  const deployedResources = useMemo(
+    () => resources.filter((r) => (r.status === 'deployed' || r.status === 'en_route') && r.assignedClusterId),
+    [resources]
+  );
+  const enRouteResources = useMemo(
+    () => resources.filter((r) => r.status === 'en_route' && r.assignedClusterId && r.deployedAt),
+    [resources]
+  );
+  const containmentClusters = useMemo(
+    () => fireClusters.filter((c) => (containmentMap.get(c.id) || 0) > 0),
+    [fireClusters, containmentMap]
+  );
+
+  // O(1) cluster lookup for arc layer accessors
+  const clusterById = useMemo(() => {
+    const map = new globalThis.Map<string, FireCluster>();
+    for (const c of fireClusters) map.set(c.id, c);
+    return map;
+  }, [fireClusters]);
+
+  // Cache convex hull perimeters — only recompute when clusters change
+  const perimeterCache = useMemo(() => {
+    const cache = new globalThis.Map<string, [number, number][]>();
+    for (const c of perimeterClusters) {
+      const pts = c.points.map((p): [number, number] => [p.longitude, p.latitude]);
+      cache.set(c.id, computeFirePerimeter(pts, c.severity === 'critical' ? 0.8 : 0.4));
+    }
+    return cache;
+  }, [perimeterClusters]);
+
   const handleClusterClick = useCallback(
     (info: PickingInfo) => {
       if (info.object) {
@@ -418,11 +465,8 @@ export function FireMap() {
     // Fire perimeter outlines (convex hull of detection points)
     new PolygonLayer<FireCluster>({
       id: 'fire-perimeters',
-      data: fireClusters.filter((c) => c.points.length >= 3),
-      getPolygon: (d: FireCluster) => {
-        const pts = d.points.map((p): [number, number] => [p.longitude, p.latitude]);
-        return computeFirePerimeter(pts, d.severity === 'critical' ? 0.8 : 0.4);
-      },
+      data: perimeterClusters,
+      getPolygon: (d: FireCluster) => perimeterCache.get(d.id) || [],
       getFillColor: (d: FireCluster) =>
         d.severity === 'critical'
           ? [255, 50, 30, 8] as [number, number, number, number]
@@ -469,9 +513,7 @@ export function FireMap() {
     // Scale with timeline position so fires visually "grow" during scrub
     new PolygonLayer<FireCluster>({
       id: 'fire-spread-prediction',
-      data: fireClusters.filter(
-        (c) => c.severity !== 'low'
-      ),
+      data: nonLowClusters,
       getPolygon: (d: FireCluster) => {
         const baseRadius = d.severity === 'critical'
           ? Math.min(d.totalFRP * 0.02 + 5, 20)
@@ -505,7 +547,7 @@ export function FireMap() {
     // Threat pulse ring for critical fires
     new ScatterplotLayer<FireCluster>({
       id: 'threat-pulse-ring-1',
-      data: fireClusters.filter((c) => c.severity === 'critical'),
+      data: criticalClusters,
       getPosition: (d: FireCluster) => d.centroid,
       getRadius: (d: FireCluster) => {
         const base = Math.sqrt(d.totalFRP + 1) * 150;
@@ -565,7 +607,7 @@ export function FireMap() {
     // Selection ring around selected cluster
     new ScatterplotLayer<FireCluster>({
       id: 'selected-cluster-ring',
-      data: fireClusters.filter((c) => c.id === selectedClusterId),
+      data: selectedClusterArr,
       getPosition: (d: FireCluster) => d.centroid,
       getRadius: (d: FireCluster) => Math.sqrt(d.totalFRP + 1) * 140,
       getFillColor: [0, 0, 0, 0] as [number, number, number, number],
@@ -584,7 +626,7 @@ export function FireMap() {
     // Selection lock-on outer ring (pulses at different rate)
     new ScatterplotLayer<FireCluster>({
       id: 'selected-cluster-lock',
-      data: fireClusters.filter((c) => c.id === selectedClusterId),
+      data: selectedClusterArr,
       getPosition: (d: FireCluster) => d.centroid,
       getRadius: (d: FireCluster) => Math.sqrt(d.totalFRP + 1) * 180,
       getFillColor: [0, 0, 0, 0] as [number, number, number, number],
@@ -606,7 +648,7 @@ export function FireMap() {
     // Containment arc rings around clusters with deployed resources
     new PolygonLayer<FireCluster>({
       id: 'containment-arcs',
-      data: fireClusters.filter((c) => (animatedContainmentRef.current.get(c.id) || 0) > 0),
+      data: containmentClusters,
       getPolygon: (d: FireCluster) => {
         const pct = animatedContainmentRef.current.get(d.id) || 0;
         const radiusMiles = Math.sqrt(d.totalFRP + 1) * 0.04 + 1.5;
@@ -678,14 +720,10 @@ export function FireMap() {
     // Deployment arcs from resources to assigned fire clusters
     new ArcLayer<Resource>({
       id: 'deployment-arcs',
-      data: resources.filter(
-        (r) =>
-          (r.status === 'deployed' || r.status === 'en_route') &&
-          r.assignedClusterId
-      ),
+      data: deployedResources,
       getSourcePosition: (d: Resource) => [d.longitude, d.latitude],
       getTargetPosition: (d: Resource) => {
-        const cluster = fireClusters.find((c) => c.id === d.assignedClusterId);
+        const cluster = d.assignedClusterId ? clusterById.get(d.assignedClusterId) : null;
         return cluster ? cluster.centroid : [d.longitude, d.latitude];
       },
       getSourceColor: (d: Resource) =>
@@ -704,9 +742,9 @@ export function FireMap() {
     // Animated moving dots for en_route resources
     new ScatterplotLayer<Resource>({
       id: 'moving-resources',
-      data: resources.filter((r) => r.status === 'en_route' && r.assignedClusterId && r.deployedAt),
+      data: enRouteResources,
       getPosition: (d: Resource) => {
-        const cluster = fireClusters.find((c) => c.id === d.assignedClusterId);
+        const cluster = d.assignedClusterId ? clusterById.get(d.assignedClusterId) : null;
         if (!cluster || !d.deployedAt) return [d.longitude, d.latitude];
         const TRAVEL_DURATION = 8000;
         const elapsed = Date.now() - d.deployedAt;
@@ -728,7 +766,7 @@ export function FireMap() {
         getPosition: animTickRef.current,
       },
     }),
-  ], [filteredDetections, fireClusters, resources, evacuationZones, selectedClusterId, selectedWindDirection, selectedWindSpeed, handleClusterClick, getWindDir, timelinePosition, containmentMap, deployedCount]);
+  ], [filteredDetections, perimeterClusters, perimeterCache, nonLowClusters, criticalClusters, selectedClusterArr, containmentClusters, fireClusters, resources, deployedResources, enRouteResources, clusterById, evacuationZones, selectedClusterId, selectedWindDirection, handleClusterClick, getWindDir, timelinePosition, containmentMap, deployedCount]);
 
   const getTooltip = useCallback((info: PickingInfo) => {
     // Update cursor coordinates display directly via DOM for efficiency
@@ -827,7 +865,10 @@ export function FireMap() {
       <DeckGL
         ref={deckRef}
         viewState={viewState}
-        onViewStateChange={({ viewState: vs }) => setViewState(vs as typeof viewState)}
+        onViewStateChange={({ viewState: vs, interactionState }) => {
+          setViewState(vs as typeof viewState);
+          isInteractingRef.current = !!(interactionState?.isDragging || interactionState?.isZooming || interactionState?.isPanning);
+        }}
         controller={true}
         layers={layers}
         getTooltip={getTooltip}
