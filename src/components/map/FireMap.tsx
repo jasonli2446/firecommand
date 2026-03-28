@@ -342,6 +342,7 @@ export function FireMap() {
   const animTickRef = useRef(0); // shared tick counter for updateTriggers
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const deckRef = useRef<any>(null);
+  const coordsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let frame: number;
@@ -891,6 +892,11 @@ export function FireMap() {
   ], [filteredDetections, fireClusters, resources, evacuationZones, selectedClusterId, selectedWindDirection, selectedWindSpeed, handleClusterClick, getWindDir, timelinePosition, containmentMap, deployedCount]);
 
   const getTooltip = useCallback((info: PickingInfo) => {
+    // Update cursor coordinates display directly via DOM for efficiency
+    if (info.coordinate && coordsRef.current) {
+      coordsRef.current.textContent = `${info.coordinate[1].toFixed(4)}°N  ${Math.abs(info.coordinate[0]).toFixed(4)}°W`;
+    }
+
     if (!info.object) return null;
 
     if (info.layer?.id === 'fire-clusters') {
@@ -1011,6 +1017,7 @@ export function FireMap() {
           }}
         />
       </DeckGL>
+      <div ref={coordsRef} className="absolute bottom-20 left-3 z-10 text-[10px] font-mono text-muted-foreground/40 tracking-wider" />
     </div>
   );
 }

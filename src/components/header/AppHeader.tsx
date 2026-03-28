@@ -88,6 +88,9 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
           </div>
 
           <div className="flex items-center gap-4 text-xs">
+            {fireClusters.length > 0 && (
+              <MissionElapsedTime fireClusters={fireClusters} />
+            )}
             <div className="flex items-center gap-1.5">
               <span className="relative flex h-2.5 w-2.5">
                 {!isLoading && (
@@ -211,6 +214,27 @@ function DataFreshness({ lastUpdated }: { lastUpdated: Date }) {
   return (
     <span className="hidden md:inline text-muted-foreground tabular-nums">
       {label}
+    </span>
+  );
+}
+
+function MissionElapsedTime({ fireClusters }: { fireClusters: { firstDetected: Date }[] }) {
+  const [, setTick] = useState(0);
+
+  // Re-render every minute to update elapsed time
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const earliest = Math.min(...fireClusters.map(c => c.firstDetected.getTime()));
+  const elapsed = Math.floor((Date.now() - earliest) / 60000); // minutes
+  const hours = Math.floor(elapsed / 60);
+  const mins = elapsed % 60;
+
+  return (
+    <span className="hidden md:inline text-[10px] text-orange-400/70 font-mono tracking-wider">
+      T+{hours}h{mins.toString().padStart(2, '0')}m
     </span>
   );
 }

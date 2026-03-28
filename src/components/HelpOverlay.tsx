@@ -13,6 +13,7 @@ const SHORTCUTS = [
   { key: '1 / 2 / 4', action: 'Playback speed' },
   { key: '\u21E7+1-4', action: 'Switch panel tab' },
   { key: '\u2190 / \u2192', action: 'Step timeline back / forward' },
+  { key: '\u2318+\u2190/\u2192', action: 'Cycle through fire clusters' },
 ];
 
 export function HelpOverlay() {
