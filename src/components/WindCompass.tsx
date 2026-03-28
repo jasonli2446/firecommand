@@ -1,11 +1,21 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 interface WindCompassProps {
   direction: number; // degrees, 0 = N
   speed: number;
 }
 
 export function WindCompass({ direction, speed }: WindCompassProps) {
+  // Subtle oscillation for "live measurement" feel
+  const [oscillation, setOscillation] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOscillation(Math.sin(Date.now() / 800) * 3); // ±3°
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
   // Color intensity based on wind speed (higher = redder)
   const speedColor = speed > 25 ? '#ef4444' : speed > 15 ? '#f97316' : '#3b82f6';
   const speedBg = speed > 25 ? 'rgba(239,68,68,0.1)' : speed > 15 ? 'rgba(249,115,22,0.1)' : 'rgba(59,130,246,0.05)';
@@ -37,7 +47,7 @@ export function WindCompass({ direction, speed }: WindCompassProps) {
       <svg
         viewBox="0 0 40 40"
         className="w-10 h-10 transition-transform duration-700 ease-out"
-        style={{ transform: `rotate(${direction}deg)` }}
+        style={{ transform: `rotate(${direction + oscillation}deg)` }}
       >
         <defs>
           <linearGradient id="wind-grad" x1="0%" y1="0%" x2="0%" y2="100%">
