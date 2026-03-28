@@ -9,6 +9,8 @@ export function TourOverlay() {
   const selectedClusterId = useAppStore((s) => s.selectedClusterId);
   const fireClusters = useAppStore((s) => s.fireClusters);
   const resources = useAppStore((s) => s.resources);
+  const windSpeed = useAppStore((s) => s.selectedWindSpeed);
+  const windDir = useAppStore((s) => s.selectedWindDirection);
 
   if (!tourActive || tourStep < 0 || !selectedClusterId) return null;
 
@@ -79,9 +81,15 @@ export function TourOverlay() {
                 {cluster.estimatedAcres.toLocaleString()} ac
               </span>
               <span className="flex items-center gap-1">
-                <Wind className="h-3 w-3" />
                 {cluster.points.length} detections
               </span>
+              {windSpeed !== null && (
+                <span className="flex items-center gap-1 text-blue-400/80">
+                  <Wind className="h-3 w-3" />
+                  {windSpeed} mph
+                  {windDir !== null && ` ${['N','NE','E','SE','S','SW','W','NW'][Math.round(windDir / 45) % 8]}`}
+                </span>
+              )}
             </div>
           </div>
           <div className="text-right shrink-0">

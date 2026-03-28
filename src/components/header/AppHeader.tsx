@@ -58,9 +58,19 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
     const availableCount = resources.filter(
       (r) => r.status === 'available'
     ).length;
-    if (availableCount < 5) {
+    if (availableCount === 0) {
+      msgs.push(
+        `MUTUAL AID NEEDED: All resources committed — request reinforcements from neighboring jurisdictions`
+      );
+    } else if (availableCount < 5) {
       msgs.push(
         `LOW RESOURCES: Only ${availableCount} units available for deployment`
+      );
+    }
+    const growingFires = fireClusters.filter((c) => c.trend === 'growing' && (c.severity === 'critical' || c.severity === 'high'));
+    if (growingFires.length > 1) {
+      msgs.push(
+        `MULTI-FRONT ESCALATION: ${growingFires.length} high-severity fires actively growing`
       );
     }
     return msgs;
