@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check, FileText } from 'lucide-react';
+import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check, FileText, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -143,6 +143,25 @@ export function CommandPanel() {
                   >
                     {selectedCluster.severity.toUpperCase()}
                   </Badge>
+                  {(() => {
+                    const pct = getContainment(selectedCluster.id, resources);
+                    if (pct >= 40) return (
+                      <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-[10px] gap-0.5">
+                        <TrendingDown className="h-3 w-3" /> Stabilizing
+                      </Badge>
+                    );
+                    if (pct > 0) return (
+                      <Badge className="bg-yellow-500/15 text-yellow-400 border-yellow-500/20 text-[10px] gap-0.5">
+                        <Minus className="h-3 w-3" /> Contested
+                      </Badge>
+                    );
+                    if (selectedCluster.severity === 'critical' || selectedCluster.severity === 'high') return (
+                      <Badge className="bg-red-500/15 text-red-400 border-red-500/20 text-[10px] gap-0.5">
+                        <TrendingUp className="h-3 w-3" /> Intensifying
+                      </Badge>
+                    );
+                    return null;
+                  })()}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
