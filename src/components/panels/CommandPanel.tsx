@@ -817,11 +817,14 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 
 function ExecuteButton({ onExecute }: { onExecute: () => void }) {
   const [executed, setExecuted] = useState(false);
+  const [showFlash, setShowFlash] = useState(false);
   const actionLog = useAppStore((s) => s.actionLog);
 
   const handleExecute = () => {
     onExecute();
     setExecuted(true);
+    setShowFlash(true);
+    setTimeout(() => setShowFlash(false), 700);
   };
 
   if (executed) {
@@ -832,7 +835,13 @@ function ExecuteButton({ onExecute }: { onExecute: () => void }) {
 
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+        {showFlash && (
+          <div className="fixed inset-0 z-[80] execute-flash" />
+        )}
+        <div
+          className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20"
+          style={{ animation: 'panel-slide-in 0.3s ease-out' }}
+        >
           <Check className="h-4 w-4 text-emerald-400 shrink-0" />
           <span className="text-sm text-emerald-400 font-medium">
             Plan executed — {recentDeploys.length} resources deploying
@@ -840,8 +849,14 @@ function ExecuteButton({ onExecute }: { onExecute: () => void }) {
         </div>
         {recentDeploys.length > 0 && (
           <div className="space-y-0.5 pl-1">
-            {recentDeploys.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-1.5 text-[11px] text-blue-400/80">
+            {recentDeploys.map((entry, i) => (
+              <div
+                key={entry.id}
+                className="flex items-center gap-1.5 text-[11px] text-blue-400/80"
+                style={{
+                  animation: `panel-slide-in 0.4s ease-out ${i * 0.15}s both`,
+                }}
+              >
                 <span className="h-1 w-1 rounded-full bg-blue-400/60 shrink-0" />
                 {entry.message}
               </div>
