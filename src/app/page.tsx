@@ -8,12 +8,15 @@ import { TimelineBar } from '@/components/timeline/TimelineBar';
 import { MapStatsOverlay } from '@/components/map/MapStatsOverlay';
 import { MapLegend } from '@/components/map/MapLegend';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { NotificationContainer } from '@/components/Notifications';
 import { useFireData } from '@/hooks/useFireData';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAppStore } from '@/store/app-store';
 import { generateResources } from '@/lib/mock-resources';
 
 export default function Home() {
   const { isLoading, lastUpdated } = useFireData();
+  useKeyboardShortcuts();
   const setResources = useAppStore((s) => s.setResources);
   const fireClusters = useAppStore((s) => s.fireClusters);
   const resources = useAppStore((s) => s.resources);
@@ -71,6 +74,7 @@ export default function Home() {
       <MapStatsOverlay />
       <CommandPanel />
       <TimelineBar />
+      <NotificationContainer />
     </div>
   );
 }

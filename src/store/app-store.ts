@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { FireDetection, FireCluster } from '@/types/fire';
 import { Resource } from '@/types/resource';
 import { EvacuationZone } from '@/types/evacuation';
+import { notify } from '@/components/Notifications';
 
 interface AppState {
   fireDetections: FireDetection[];
@@ -55,17 +56,30 @@ export const useAppStore = create<AppState>((set) => ({
   setIsPlaying: (playing) => set({ isPlaying: playing }),
   setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
   deployResource: (resourceId, clusterId) =>
-    set((state) => ({
-      resources: state.resources.map((r) =>
-        r.id === resourceId ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId } : r
-      ),
-    })),
+    set((state) => {
+      const resource = state.resources.find((r) => r.id === resourceId);
+      const cluster = state.fireClusters.find((c) => c.id === clusterId);
+      if (resource && cluster) {
+        notify('success', `${resource.name} deployed to ${cluster.name}`);
+      }
+      return {
+        resources: state.resources.map((r) =>
+          r.id === resourceId ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId } : r
+        ),
+      };
+    }),
   recallResource: (resourceId) =>
-    set((state) => ({
-      resources: state.resources.map((r) =>
-        r.id === resourceId ? { ...r, status: 'available' as const, assignedClusterId: null } : r
-      ),
-    })),
+    set((state) => {
+      const resource = state.resources.find((r) => r.id === resourceId);
+      if (resource) {
+        notify('info', `${resource.name} recalled to base`);
+      }
+      return {
+        resources: state.resources.map((r) =>
+          r.id === resourceId ? { ...r, status: 'available' as const, assignedClusterId: null } : r
+        ),
+      };
+    }),
   executeAIPlan: () =>
     set((state) => {
       if (!state.selectedClusterId) return state;
@@ -92,9 +106,15 @@ export const useAppStore = create<AppState>((set) => ({
           return aIdx - bIdx;
         });
 
-      const toDeploy = new Set(
-        available.slice(0, deployCount).map((r) => r.id)
-      );
+      const toDeployList = available.slice(0, deployCount);
+      const toDeploy = new Set(toDeployList.map((r) => r.id));
+
+      if (toDeployList.length > 0) {
+        notify(
+          'success',
+          `Executing AI plan: ${toDeployList.length} resources deploying to ${cluster.name}`
+        );
+      }
 
       return {
         resources: state.resources.map((r) =>
