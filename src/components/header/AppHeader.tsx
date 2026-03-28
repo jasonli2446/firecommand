@@ -173,15 +173,17 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
       {alerts.length > 0 && (
         <div className="glass-panel border-b border-white/5 overflow-hidden h-7">
           <div className="flex items-center h-full px-3 gap-2">
-            <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+            <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0 animate-pulse" />
             <div className="overflow-hidden flex-1">
               <div
-                className="whitespace-nowrap text-xs text-amber-400/90 font-medium"
+                className="whitespace-nowrap text-xs text-amber-400/90 font-medium inline-flex"
                 style={{
-                  animation: `ticker ${Math.max(alerts.join('   ///   ').length * 0.12, 15)}s linear infinite`,
+                  animation: `ticker ${Math.max(alerts.join('   \u25C6   ').length * 0.12, 15)}s linear infinite`,
                 }}
               >
-                {alerts.join('   ///   ')}
+                {/* Duplicate alerts for seamless loop */}
+                <span>{alerts.join('   \u25C6   ')}</span>
+                <span className="ml-24">{alerts.join('   \u25C6   ')}</span>
               </div>
             </div>
           </div>

@@ -16,7 +16,7 @@ const LEGEND_ITEMS = [
   {
     label: 'Resources',
     items: [
-      { color: 'bg-emerald-500', text: 'Available' },
+      { color: 'bg-emerald-500', text: 'Available (E/H/C/A/D/W)' },
       { color: 'bg-blue-500', text: 'Deployed' },
       { color: 'bg-yellow-400', text: 'En Route' },
       { color: 'bg-gray-500', text: 'Maintenance' },

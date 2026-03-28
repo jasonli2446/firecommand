@@ -526,20 +526,26 @@ export function CommandPanel() {
 
               {isAnalyzing && !recommendation && (
                 <div className="space-y-3 py-2">
-                  <div className="flex items-center gap-2 text-sm text-blue-400">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>AIP Agent analyzing operational picture...</span>
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                      </div>
+                      <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-400 animate-ping" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-400 font-medium">AIP Agent analyzing...</p>
+                      <p className="text-[10px] text-muted-foreground">Processing fire data, weather, and resources</p>
+                    </div>
                   </div>
                   {/* Skeleton loading bars */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 pt-1">
                     <div className="h-3 bg-white/5 rounded animate-pulse w-3/4" />
                     <div className="h-3 bg-white/5 rounded animate-pulse w-full" />
                     <div className="h-3 bg-white/5 rounded animate-pulse w-5/6" />
                     <div className="h-3 bg-white/5 rounded animate-pulse w-2/3" style={{ animationDelay: '0.15s' }} />
                     <div className="h-3 bg-white/5 rounded animate-pulse w-4/5" style={{ animationDelay: '0.3s' }} />
-                  </div>
-                  <div className="text-[10px] text-muted-foreground/50">
-                    Querying Palantir AIP Agent with fire data, weather, and resources...
+                    <div className="h-3 bg-white/5 rounded animate-pulse w-3/5" style={{ animationDelay: '0.45s' }} />
                   </div>
                 </div>
               )}
@@ -819,7 +825,7 @@ function ExecuteButton({ onExecute }: { onExecute: () => void }) {
 
   return (
     <Button
-      className="w-full bg-orange-600 hover:bg-orange-700 text-white glow-orange"
+      className="w-full bg-orange-600 hover:bg-orange-700 text-white glow-orange animate-pulse"
       size="sm"
       onClick={handleExecute}
     >
