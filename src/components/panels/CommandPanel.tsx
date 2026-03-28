@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check, FileText, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea from base-ui doesn't scroll in flex layouts — use native overflow
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -128,7 +128,7 @@ export function CommandPanel() {
           </TabsTrigger>
         </TabsList>
 
-        <ScrollArea className="flex-1">
+        <div className="h-0 flex-grow overflow-y-auto">
           <TabsContent value="overview" className="p-4 mt-0 space-y-4">
             {selectedCluster ? (
               <>
@@ -655,7 +655,7 @@ export function CommandPanel() {
               })
             )}
           </TabsContent>
-        </ScrollArea>
+        </div>
       </Tabs>
     </div>
   );

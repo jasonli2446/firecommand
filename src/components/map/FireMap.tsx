@@ -20,6 +20,8 @@ const INITIAL_VIEW_STATE = {
   zoom: 6,
   pitch: 45,
   bearing: -15,
+  minZoom: 5,
+  maxZoom: 15,
 };
 
 const SEVERITY_COLORS: Record<string, [number, number, number, number]> = {
