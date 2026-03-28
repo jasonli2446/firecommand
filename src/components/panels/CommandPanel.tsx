@@ -726,6 +726,33 @@ export function CommandPanel() {
                 {evacuationZones.length} active
               </span>
             </div>
+            {evacuationZones.length > 0 && (
+              <Card className="bg-white/5 border-white/5">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Population at Risk</p>
+                      <p className="text-2xl font-bold text-amber-400 tabular-nums">
+                        {evacuationZones.reduce((s, z) => s + z.population, 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex gap-1.5">
+                        {(['immediate', 'warning', 'watch'] as const).map((level) => {
+                          const count = evacuationZones.filter((z) => z.riskLevel === level).length;
+                          if (count === 0) return null;
+                          return (
+                            <Badge key={level} className={`text-[10px] ${RISK_COLORS[level]}`}>
+                              {count} {level}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {evacuationZones.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
                 <Shield className="h-8 w-8 mx-auto mb-3 opacity-40" />
@@ -737,27 +764,38 @@ export function CommandPanel() {
                   (c) => c.id === zone.clusterId
                 );
                 return (
-                  <Card key={zone.id} className="bg-white/5 border-white/5">
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-white">
-                          {fire?.name || 'Unknown Fire'}
-                        </span>
-                        <Badge
-                          className={`text-xs ${RISK_COLORS[zone.riskLevel]}`}
-                        >
-                          {zone.riskLevel.toUpperCase()}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-muted-foreground space-y-0.5">
-                        <p>
-                          Population: ~{zone.population.toLocaleString()}
-                        </p>
-                        <p>Radius: {zone.radiusMiles} miles</p>
-                        <p>Issued: {zone.issuedAt.toLocaleString()}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <button
+                    key={zone.id}
+                    className="w-full text-left"
+                    onClick={() => {
+                      if (fire) {
+                        useAppStore.getState().selectCluster(fire.id);
+                        useAppStore.getState().setPendingFlyTo(zone.center as [number, number]);
+                      }
+                    }}
+                  >
+                    <Card className="bg-white/5 border-white/5 hover:bg-white/8 transition-colors cursor-pointer">
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-white">
+                            {fire?.name || 'Unknown Fire'}
+                          </span>
+                          <Badge
+                            className={`text-xs ${RISK_COLORS[zone.riskLevel]}`}
+                          >
+                            {zone.riskLevel.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          <p>
+                            Population: ~<span className="text-white font-medium">{zone.population.toLocaleString()}</span>
+                          </p>
+                          <p>Radius: {zone.radiusMiles} miles</p>
+                          <p>Issued: {zone.issuedAt.toLocaleString()}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </button>
                 );
               })
             )}
