@@ -448,6 +448,39 @@ export function FireMap() {
       },
     }),
 
+    // Fire cluster name labels
+    new TextLayer<FireCluster>({
+      id: 'cluster-labels',
+      data: fireClusters,
+      getPosition: (d: FireCluster) => d.centroid,
+      getText: (d: FireCluster) => {
+        const pct = getClusterContainment(d.id, resources);
+        return pct > 0 ? `${d.name}  ${pct}%` : d.name;
+      },
+      getSize: 12,
+      getColor: (d: FireCluster) => {
+        const pct = getClusterContainment(d.id, resources);
+        if (pct >= 60) return [34, 197, 94, 255] as [number, number, number, number];
+        if (pct >= 40) return [250, 204, 21, 255] as [number, number, number, number];
+        if (pct > 0) return [255, 165, 0, 255] as [number, number, number, number];
+        return [255, 255, 255, 200] as [number, number, number, number];
+      },
+      getTextAnchor: 'middle' as const,
+      getAlignmentBaseline: 'top' as const,
+      getPixelOffset: [0, 14] as [number, number],
+      fontWeight: 700,
+      fontFamily: 'system-ui, sans-serif',
+      billboard: true,
+      sizeMinPixels: 10,
+      sizeMaxPixels: 14,
+      outlineWidth: 3,
+      outlineColor: [0, 0, 0, 200] as [number, number, number, number],
+      updateTriggers: {
+        getText: [resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length],
+        getColor: [resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length],
+      },
+    }),
+
     new ScatterplotLayer<Resource>({
       id: 'resources',
       data: resources,

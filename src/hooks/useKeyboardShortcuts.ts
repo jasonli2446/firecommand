@@ -54,6 +54,9 @@ export function useKeyboardShortcuts() {
             Math.min(1, store.timelinePosition + 0.05)
           );
           break;
+        case '?':
+          store.setShowHelp(!store.showHelp);
+          break;
       }
     };
 

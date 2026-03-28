@@ -24,6 +24,7 @@ interface AppState {
   timelinePosition: number;
   isPlaying: boolean;
   playbackSpeed: number;
+  showHelp: boolean;
 
   setFireDetections: (detections: FireDetection[]) => void;
   setFireClusters: (clusters: FireCluster[]) => void;
@@ -35,6 +36,7 @@ interface AppState {
   setTimelinePosition: (pos: number) => void;
   setIsPlaying: (playing: boolean) => void;
   setPlaybackSpeed: (speed: number) => void;
+  setShowHelp: (show: boolean) => void;
   deployResource: (resourceId: string, clusterId: string) => void;
   recallResource: (resourceId: string) => void;
   executeAIPlan: () => void;
@@ -54,6 +56,7 @@ export const useAppStore = create<AppState>((set) => ({
   timelinePosition: 1,
   isPlaying: false,
   playbackSpeed: 1,
+  showHelp: false,
 
   setFireDetections: (detections) => set({ fireDetections: detections }),
   setFireClusters: (clusters) => set({ fireClusters: clusters }),
@@ -65,6 +68,7 @@ export const useAppStore = create<AppState>((set) => ({
   setTimelinePosition: (pos) => set({ timelinePosition: pos }),
   setIsPlaying: (playing) => set({ isPlaying: playing }),
   setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
+  setShowHelp: (show) => set({ showHelp: show }),
   addLogEntry: (type, message) =>
     set((state) => ({
       actionLog: [
