@@ -922,11 +922,18 @@ export function FireMap() {
     return null;
   }, [containmentMap, resources]);
 
-  // Click empty space to deselect
+  // Click empty space to deselect and zoom out
   const handleMapClick = useCallback(
     (info: PickingInfo) => {
       if (!info.object && selectedClusterId) {
         selectCluster(null);
+        setViewState((prev) => ({
+          ...prev,
+          zoom: Math.min(prev.zoom, 7),
+          pitch: 45,
+          transitionDuration: 1200,
+          transitionInterpolator: new FlyToInterpolator(),
+        }));
       }
     },
     [selectedClusterId, selectCluster]
