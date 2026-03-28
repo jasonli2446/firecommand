@@ -34,14 +34,16 @@ export function useDemoMode(callbacks: DemoCallbacks) {
     cleanup();
     setDemoActive(false);
     setDemoStep('idle');
-    const { tourActive } = useAppStore.getState();
+    const { tourActive, setDemoActive: setStoreDemoActive } = useAppStore.getState();
+    setStoreDemoActive(false);
     if (tourActive) stopTour();
   }, [cleanup, stopTour]);
 
   const startDemo = useCallback(() => {
-    const { fireClusters } = useAppStore.getState();
+    const { fireClusters, setDemoActive: setStoreDemoActive } = useAppStore.getState();
     if (fireClusters.length === 0) return;
     setDemoActive(true);
+    setStoreDemoActive(true);
     setDemoStep('settling');
   }, []);
 
@@ -121,10 +123,13 @@ export function useDemoMode(callbacks: DemoCallbacks) {
         break;
       }
 
-      case 'complete':
+      case 'complete': {
+        const { setDemoActive: setStoreDemoActive } = useAppStore.getState();
         setDemoActive(false);
+        setStoreDemoActive(false);
         setDemoStep('idle');
         break;
+      }
     }
 
     return () => cleanup();

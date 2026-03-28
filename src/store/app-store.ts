@@ -32,6 +32,7 @@ interface AppState {
   triggerAIAnalyze: (() => void) | null;
   pendingFlyTo: [number, number] | null;
   mapStyle: 'dark' | 'satellite';
+  demoActive: boolean;
 
   setFireDetections: (detections: FireDetection[]) => void;
   setFireClusters: (clusters: FireCluster[]) => void;
@@ -49,6 +50,7 @@ interface AppState {
   setTriggerAIAnalyze: (fn: (() => void) | null) => void;
   setPendingFlyTo: (coords: [number, number] | null) => void;
   setMapStyle: (style: 'dark' | 'satellite') => void;
+  setDemoActive: (active: boolean) => void;
   deployResource: (resourceId: string, clusterId: string) => void;
   recallResource: (resourceId: string) => void;
   executeAIPlan: (recommendationText?: string) => void;
@@ -129,6 +131,7 @@ export const useAppStore = create<AppState>((set) => ({
   triggerAIAnalyze: null,
   pendingFlyTo: null,
   mapStyle: 'dark',
+  demoActive: false,
 
   setFireDetections: (detections) => set({ fireDetections: detections }),
   setFireClusters: (clusters) => set({ fireClusters: clusters }),
@@ -146,6 +149,7 @@ export const useAppStore = create<AppState>((set) => ({
   setTriggerAIAnalyze: (fn) => set({ triggerAIAnalyze: fn }),
   setPendingFlyTo: (coords) => set({ pendingFlyTo: coords }),
   setMapStyle: (style) => set({ mapStyle: style }),
+  setDemoActive: (active) => set({ demoActive: active }),
   addLogEntry: (type, message) =>
     set((state) => ({
       actionLog: [
