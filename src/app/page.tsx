@@ -12,6 +12,7 @@ import { NotificationContainer } from '@/components/Notifications';
 import { ActivityLog } from '@/components/ActivityLog';
 import { HelpOverlay } from '@/components/HelpOverlay';
 import { TourOverlay } from '@/components/TourOverlay';
+import { MiniMap } from '@/components/map/MiniMap';
 import { useFireData } from '@/hooks/useFireData';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAutoTour } from '@/hooks/useAutoTour';
@@ -139,6 +140,7 @@ export default function Home() {
           <CommandPanel />
           <TimelineBar />
           <ActivityLog />
+          <MiniMap />
           <TourOverlay />
           <HelpOverlay />
           <NotificationContainer />
