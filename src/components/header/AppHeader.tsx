@@ -21,6 +21,9 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
   const criticalCount = fireClusters.filter(
     (c) => c.severity === 'critical'
   ).length;
+  const highCount = fireClusters.filter(
+    (c) => c.severity === 'high'
+  ).length;
   const activeResources = resources.filter(
     (r) => r.status === 'deployed' || r.status === 'en_route'
   ).length;
@@ -36,9 +39,15 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
   const alerts = useMemo(() => {
     const msgs: string[] = [];
     const critClusters = fireClusters.filter((c) => c.severity === 'critical');
+    const highClusters = fireClusters.filter((c) => c.severity === 'high');
     for (const c of critClusters) {
       msgs.push(
         `CRITICAL: ${c.name} — ${c.estimatedAcres.toLocaleString()} acres, FRP ${c.totalFRP}`
+      );
+    }
+    for (const c of highClusters.slice(0, 3)) {
+      msgs.push(
+        `HIGH: ${c.name} — ${c.estimatedAcres.toLocaleString()} acres, ${c.points.length} detections`
       );
     }
     if (immediateEvacCount > 0) {
@@ -103,11 +112,15 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
           </div>
 
           <div className="flex items-center gap-2">
-            {criticalCount > 0 && (
+            {criticalCount > 0 ? (
               <Badge variant="destructive" className="text-xs glow-red">
                 {criticalCount} CRITICAL
               </Badge>
-            )}
+            ) : highCount > 0 ? (
+              <Badge className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30">
+                {highCount} HIGH
+              </Badge>
+            ) : null}
             <Badge variant="secondary" className="text-xs">
               <Radio className="h-3 w-3 mr-1" />
               {fireClusters.length} fires

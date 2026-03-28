@@ -165,6 +165,28 @@
   box-shadow: 0 0 20px rgba(255, 50, 50, 0.3), 0 0 60px rgba(255, 50, 50, 0.1);
 }
 
+/* Map vignette overlay for command display feel */
+.map-vignette {
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(5, 5, 10, 0.4) 100%
+  );
+}
+
+/* Subtle scan line effect for operational display */
+.scan-lines {
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.02) 2px,
+    rgba(0, 0, 0, 0.02) 4px
+  );
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

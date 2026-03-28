@@ -110,6 +110,7 @@ export default function Home() {
   return (
     <div className="relative h-full w-full">
       <FireMap />
+      <div className="absolute inset-0 map-vignette z-[1]" />
       <AppHeader lastUpdated={lastUpdated} isLoading={isLoading} tourActive={tourActive} onStartTour={startTour} onStopTour={stopTour} />
       <MapLegend />
       <MapStatsOverlay />
