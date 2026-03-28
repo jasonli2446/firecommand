@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check } from 'lucide-react';
+import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check, FileText } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { useAppStore } from '@/store/app-store';
 import { useWeatherData } from '@/hooks/useWeatherData';
 import { useAIAgent } from '@/hooks/useAIAgent';
 import { WindCompass } from '@/components/WindCompass';
+import { generateICS209 } from '@/lib/ics209-export';
 
 const SEVERITY_BADGE_COLORS: Record<string, string> = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -233,6 +234,22 @@ export function CommandPanel() {
                     </Card>
                   );
                 })()}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs text-muted-foreground hover:text-white border border-white/5 hover:border-white/10"
+                  onClick={() => {
+                    const report = generateICS209(selectedCluster, resources, evacuationZones, weather);
+                    const blob = new Blob([report], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const win = window.open(url, '_blank');
+                    if (win) win.document.title = `ICS-209 — ${selectedCluster.name}`;
+                  }}
+                >
+                  <FileText className="h-3.5 w-3.5 mr-1.5" />
+                  Export ICS-209 Report
+                </Button>
 
                 <div className="text-xs text-muted-foreground space-y-1">
                   <p>
