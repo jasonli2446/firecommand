@@ -395,15 +395,16 @@ export function FireMap() {
       getPosition: (d: FireDetection) => [d.longitude, d.latitude],
       getWeight: (d: FireDetection) => d.frp || 1,
       colorRange: [
-        [255, 255, 178],
-        [254, 204, 92],
-        [253, 141, 60],
-        [240, 59, 32],
-        [189, 0, 38],
+        [255, 255, 150],
+        [255, 200, 60],
+        [255, 130, 30],
+        [240, 50, 20],
+        [180, 0, 30],
+        [120, 0, 50],
       ] as [number, number, number][],
-      radiusPixels: 60,
-      intensity: 1.5,
-      threshold: 0.1,
+      radiusPixels: 65,
+      intensity: 1.8,
+      threshold: 0.08,
       aggregation: 'SUM' as const,
     }),
 
@@ -746,12 +747,38 @@ export function FireMap() {
       },
       getSourceColor: (d: Resource) =>
         d.status === 'deployed'
-          ? [59, 130, 246, 180] as [number, number, number, number]
-          : [250, 204, 21, 180] as [number, number, number, number],
-      getTargetColor: [255, 100, 50, 180] as [number, number, number, number],
-      getWidth: 2,
-      getHeight: 0.3,
+          ? [59, 130, 246, 140] as [number, number, number, number]
+          : [250, 204, 21, 160] as [number, number, number, number],
+      getTargetColor: (d: Resource) =>
+        d.status === 'deployed'
+          ? [59, 130, 246, 60] as [number, number, number, number]
+          : [255, 140, 50, 120] as [number, number, number, number],
+      getWidth: (d: Resource) => d.status === 'en_route' ? 2.5 : 1.5,
+      getHeight: 0.35,
       greatCircle: false,
+    }),
+
+    // Glow behind moving dots
+    new ScatterplotLayer<Resource>({
+      id: 'moving-resources-glow',
+      data: resources.filter((r) => r.status === 'en_route' && r.assignedClusterId && r.deployedAt),
+      getPosition: (d: Resource) => {
+        const cluster = fireClusters.find((c) => c.id === d.assignedClusterId);
+        if (!cluster || !d.deployedAt) return [d.longitude, d.latitude];
+        const elapsed = Date.now() - d.deployedAt;
+        const t = Math.min(1, elapsed / 8000);
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        return [
+          d.longitude + (cluster.centroid[0] - d.longitude) * ease,
+          d.latitude + (cluster.centroid[1] - d.latitude) * ease,
+        ];
+      },
+      getFillColor: [250, 204, 21, 40] as [number, number, number, number],
+      getRadius: 3000,
+      radiusMinPixels: 10,
+      radiusMaxPixels: 25,
+      stroked: false,
+      updateTriggers: { getPosition: animTickRef.current },
     }),
 
     // Animated moving dots for en_route resources
@@ -761,10 +788,9 @@ export function FireMap() {
       getPosition: (d: Resource) => {
         const cluster = fireClusters.find((c) => c.id === d.assignedClusterId);
         if (!cluster || !d.deployedAt) return [d.longitude, d.latitude];
-        const TRAVEL_DURATION = 8000; // 8 seconds travel animation
+        const TRAVEL_DURATION = 8000;
         const elapsed = Date.now() - d.deployedAt;
         const t = Math.min(1, elapsed / TRAVEL_DURATION);
-        // Ease-in-out cubic
         const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
         return [
           d.longitude + (cluster.centroid[0] - d.longitude) * ease,
