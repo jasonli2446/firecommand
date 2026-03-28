@@ -30,6 +30,7 @@ interface AppState {
   tourActive: boolean;
   tourStep: number;
   triggerAIAnalyze: (() => void) | null;
+  pendingFlyTo: [number, number] | null;
 
   setFireDetections: (detections: FireDetection[]) => void;
   setFireClusters: (clusters: FireCluster[]) => void;
@@ -45,6 +46,7 @@ interface AppState {
   setSelectedWind: (direction: number | null, speed: number | null) => void;
   setTourState: (active: boolean, step: number) => void;
   setTriggerAIAnalyze: (fn: (() => void) | null) => void;
+  setPendingFlyTo: (coords: [number, number] | null) => void;
   deployResource: (resourceId: string, clusterId: string) => void;
   recallResource: (resourceId: string) => void;
   executeAIPlan: (recommendationText?: string) => void;
@@ -123,6 +125,7 @@ export const useAppStore = create<AppState>((set) => ({
   tourActive: false,
   tourStep: -1,
   triggerAIAnalyze: null,
+  pendingFlyTo: null,
 
   setFireDetections: (detections) => set({ fireDetections: detections }),
   setFireClusters: (clusters) => set({ fireClusters: clusters }),
@@ -138,6 +141,7 @@ export const useAppStore = create<AppState>((set) => ({
   setSelectedWind: (direction, speed) => set({ selectedWindDirection: direction, selectedWindSpeed: speed }),
   setTourState: (active, step) => set({ tourActive: active, tourStep: step }),
   setTriggerAIAnalyze: (fn) => set({ triggerAIAnalyze: fn }),
+  setPendingFlyTo: (coords) => set({ pendingFlyTo: coords }),
   addLogEntry: (type, message) =>
     set((state) => ({
       actionLog: [

@@ -53,15 +53,71 @@ export function useKeyboardShortcuts() {
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          store.setTimelinePosition(
-            Math.max(0, store.timelinePosition - 0.05)
-          );
+          // Cycle through fire clusters (previous)
+          if (e.metaKey || e.ctrlKey) {
+            const clusters = [...store.fireClusters].sort((a, b) => {
+              // Sort by severity (critical first)
+              const severityOrder = { critical: 0, high: 1, moderate: 2, low: 3 };
+              const severityDiff = (severityOrder[a.severity as keyof typeof severityOrder] ?? 4) -
+                                   (severityOrder[b.severity as keyof typeof severityOrder] ?? 4);
+              if (severityDiff !== 0) return severityDiff;
+              // Then by totalFRP descending
+              return b.totalFRP - a.totalFRP;
+            });
+
+            if (clusters.length === 0) break;
+
+            const currentIndex = store.selectedClusterId
+              ? clusters.findIndex(c => c.id === store.selectedClusterId)
+              : -1;
+
+            const nextIndex = currentIndex === -1 || currentIndex === 0
+              ? clusters.length - 1  // Wrap to last
+              : currentIndex - 1;
+
+            const nextCluster = clusters[nextIndex];
+            store.selectCluster(nextCluster.id);
+            store.setPendingFlyTo(nextCluster.centroid);
+          } else {
+            // Timeline scrubbing
+            store.setTimelinePosition(
+              Math.max(0, store.timelinePosition - 0.05)
+            );
+          }
           break;
         case 'ArrowRight':
           e.preventDefault();
-          store.setTimelinePosition(
-            Math.min(1, store.timelinePosition + 0.05)
-          );
+          // Cycle through fire clusters (next)
+          if (e.metaKey || e.ctrlKey) {
+            const clusters = [...store.fireClusters].sort((a, b) => {
+              // Sort by severity (critical first)
+              const severityOrder = { critical: 0, high: 1, moderate: 2, low: 3 };
+              const severityDiff = (severityOrder[a.severity as keyof typeof severityOrder] ?? 4) -
+                                   (severityOrder[b.severity as keyof typeof severityOrder] ?? 4);
+              if (severityDiff !== 0) return severityDiff;
+              // Then by totalFRP descending
+              return b.totalFRP - a.totalFRP;
+            });
+
+            if (clusters.length === 0) break;
+
+            const currentIndex = store.selectedClusterId
+              ? clusters.findIndex(c => c.id === store.selectedClusterId)
+              : -1;
+
+            const nextIndex = currentIndex === -1 || currentIndex === clusters.length - 1
+              ? 0  // Wrap to first
+              : currentIndex + 1;
+
+            const nextCluster = clusters[nextIndex];
+            store.selectCluster(nextCluster.id);
+            store.setPendingFlyTo(nextCluster.centroid);
+          } else {
+            // Timeline scrubbing
+            store.setTimelinePosition(
+              Math.min(1, store.timelinePosition + 0.05)
+            );
+          }
           break;
         case '?':
           store.setShowHelp(!store.showHelp);

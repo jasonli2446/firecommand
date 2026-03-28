@@ -253,6 +253,8 @@ export function FireMap() {
     timelinePosition,
     tourActive,
     tourStep,
+    pendingFlyTo,
+    setPendingFlyTo,
   } = useAppStore();
 
   // Controlled view state for fly-to animations
@@ -315,6 +317,25 @@ export function FireMap() {
       transitionInterpolator: new FlyToInterpolator(),
     }));
   }, [selectedClusterId, fireClusters, tourActive, tourStep]);
+
+  // Fly to coordinates from keyboard navigation
+  useEffect(() => {
+    if (!pendingFlyTo) return;
+
+    setViewState((prev) => ({
+      ...prev,
+      longitude: pendingFlyTo[0],
+      latitude: pendingFlyTo[1],
+      zoom: Math.max(prev.zoom, 8),
+      pitch: 45,
+      bearing: prev.bearing,
+      transitionDuration: 1500,
+      transitionInterpolator: new FlyToInterpolator(),
+    }));
+
+    // Clear the pending fly-to after handling it
+    setPendingFlyTo(null);
+  }, [pendingFlyTo, setPendingFlyTo]);
 
   // Animation refs — avoids re-rendering React at 60fps
   const pulseRef = useRef(1);
@@ -875,20 +896,33 @@ export function FireMap() {
     if (info.layer?.id === 'fire-clusters') {
       const cluster = info.object as FireCluster;
       const pct = containmentMap.get(cluster.id) || 0;
-      const clusterDeployed = resources.filter(
+      const assignedCount = resources.filter(
         (r) => r.assignedClusterId === cluster.id && (r.status === 'deployed' || r.status === 'en_route')
       ).length;
-      const pctColor = pct >= 60 ? '#22c55e' : pct >= 40 ? '#facc15' : pct >= 20 ? '#f97316' : '#ef4444';
       return {
-        html: `<div style="font-family: system-ui; padding: 6px 10px;">
-          <strong>${cluster.name}</strong>
-          <span style="color: ${pctColor}; float: right; margin-left: 12px; font-weight: 700;">${pct}%</span><br/>
-          <span style="opacity: 0.7; font-size: 11px;">Severity: ${cluster.severity.toUpperCase()} | ${cluster.estimatedAcres.toLocaleString()} ac</span><br/>
-          <span style="opacity: 0.7; font-size: 11px;">FRP: ${cluster.totalFRP} | ${cluster.points.length} detections</span>
-          ${clusterDeployed > 0 ? `<br/><span style="color: #3b82f6; font-size: 11px;">${clusterDeployed} resource${clusterDeployed > 1 ? 's' : ''} assigned</span>` : ''}
-        </div>`,
+        html: `<div style="font-family: system-ui; padding: 8px 12px; min-width: 180px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <strong style="font-size: 14px;">${cluster.name}</strong>
+        <span style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: ${
+          cluster.severity === 'critical' ? 'rgba(239,68,68,0.2)' :
+          cluster.severity === 'high' ? 'rgba(249,115,22,0.2)' :
+          cluster.severity === 'moderate' ? 'rgba(234,179,8,0.2)' : 'rgba(34,197,94,0.2)'
+        }; color: ${
+          cluster.severity === 'critical' ? '#ef4444' :
+          cluster.severity === 'high' ? '#f97316' :
+          cluster.severity === 'moderate' ? '#eab308' : '#22c55e'
+        };">${cluster.severity.toUpperCase()}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; font-size: 11px; opacity: 0.8;">
+        <span>FRP: <strong style="color: #f97316;">${cluster.totalFRP}</strong></span>
+        <span>Acres: <strong>${cluster.estimatedAcres.toLocaleString()}</strong></span>
+        <span>Detections: ${cluster.points.length}</span>
+        <span>Containment: <strong style="color: ${pct >= 60 ? '#22c55e' : pct >= 40 ? '#eab308' : pct > 0 ? '#f97316' : '#888'};">${pct}%</strong></span>
+      </div>
+      ${assignedCount > 0 ? `<div style="margin-top: 4px; font-size: 10px; color: #3b82f6;">${assignedCount} resources assigned</div>` : '<div style="margin-top: 4px; font-size: 10px; color: #888;">Click to view details & deploy resources</div>'}
+    </div>`,
         style: {
-          backgroundColor: 'rgba(10,10,15,0.9)',
+          backgroundColor: 'rgba(10,10,15,0.92)',
           color: '#e2e8f0',
           borderRadius: '8px',
           border: '1px solid rgba(255,255,255,0.1)',
