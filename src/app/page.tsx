@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { FireMap } from '@/components/map/FireMap';
 import { AppHeader } from '@/components/header/AppHeader';
 import { CommandPanel } from '@/components/panels/CommandPanel';
@@ -29,6 +29,9 @@ export default function Home() {
   const resources = useAppStore((s) => s.resources);
 
   const addLogEntry = useAppStore((s) => s.addLogEntry);
+
+  const [showLoading, setShowLoading] = useState(true);
+  const [fadeOut, setFadeOut] = useState(false);
 
   // 'T' key toggles auto-tour, 'D' key starts demo mode
   useEffect(() => {
@@ -108,24 +111,41 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  if (isLoading && !fireClusters.length) {
-    return <LoadingScreen />;
-  }
+  // Handle loading screen fade-out
+  useEffect(() => {
+    if (!isLoading || fireClusters.length > 0) {
+      // Data is ready — start fade out
+      setFadeOut(true);
+      const timer = setTimeout(() => setShowLoading(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, fireClusters.length]);
 
   return (
     <div className="relative h-full w-full">
-      <FireMap />
-      <div className="absolute inset-0 map-vignette z-[1]" />
-      <div className="absolute inset-0 scan-lines z-[1] pointer-events-none" />
-      <AppHeader lastUpdated={lastUpdated} isLoading={isLoading} tourActive={tourActive} onStartTour={startTour} onStopTour={stopTour} />
-      <MapLegend />
-      <MapStatsOverlay />
-      <CommandPanel />
-      <TimelineBar />
-      <ActivityLog />
-      <TourOverlay />
-      <HelpOverlay />
-      <NotificationContainer />
+      {/* Main content - only render map once data is available */}
+      {(!isLoading || fireClusters.length > 0) && (
+        <>
+          <FireMap />
+          <div className="absolute inset-0 map-vignette z-[1]" />
+          <div className="absolute inset-0 scan-lines z-[1] pointer-events-none" />
+          <AppHeader lastUpdated={lastUpdated} isLoading={isLoading} tourActive={tourActive} onStartTour={startTour} onStopTour={stopTour} />
+          <MapLegend />
+          <MapStatsOverlay />
+          <CommandPanel />
+          <TimelineBar />
+          <ActivityLog />
+          <TourOverlay />
+          <HelpOverlay />
+          <NotificationContainer />
+        </>
+      )}
+      {/* Loading screen overlay with fade */}
+      {showLoading && (
+        <div className={`transition-opacity duration-700 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
+          <LoadingScreen />
+        </div>
+      )}
     </div>
   );
 }

@@ -393,7 +393,18 @@ export function FireMap() {
   const handleClusterClick = useCallback(
     (info: PickingInfo) => {
       if (info.object) {
-        selectCluster((info.object as FireCluster).id);
+        const cluster = info.object as FireCluster;
+        selectCluster(cluster.id);
+        setViewState((prev) => ({
+          ...prev,
+          longitude: cluster.centroid[0],
+          latitude: cluster.centroid[1],
+          zoom: 9,
+          pitch: 50,
+          bearing: prev.bearing,
+          transitionDuration: 1500,
+          transitionInterpolator: new FlyToInterpolator(),
+        }));
       }
     },
     [selectCluster]

@@ -13,6 +13,7 @@ import { useWeatherData } from '@/hooks/useWeatherData';
 import { useAIAgent } from '@/hooks/useAIAgent';
 import { WindCompass } from '@/components/WindCompass';
 import { generateICS209 } from '@/lib/ics209-export';
+import { ICS209Modal } from '@/components/ICS209Modal';
 
 const SEVERITY_BADGE_COLORS: Record<string, string> = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -78,6 +79,8 @@ export function CommandPanel() {
   const { isAnalyzing, recommendation, error, analyze, clearRecommendation } =
     useAIAgent();
 
+  const [ics209Report, setIcs209Report] = useState<string | null>(null);
+
   const selectedCluster = fireClusters.find((c) => c.id === selectedClusterId);
 
   const { weather } = useWeatherData(
@@ -104,7 +107,8 @@ export function CommandPanel() {
   if (!panelOpen) return null;
 
   return (
-    <div className="fixed top-12 right-0 bottom-16 w-[420px] z-40 glass-panel border-l border-white/5 flex flex-col panel-enter">
+    <>
+      <div className="fixed top-12 right-0 bottom-16 w-[420px] z-40 glass-panel border-l border-white/5 flex flex-col panel-enter">
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
         <div className="flex items-center gap-2">
           <div className="h-4 w-0.5 bg-blue-500 rounded-full" />
@@ -340,10 +344,7 @@ export function CommandPanel() {
                   className="w-full text-xs text-muted-foreground hover:text-white border border-white/5 hover:border-white/10"
                   onClick={() => {
                     const report = generateICS209(selectedCluster, resources, evacuationZones, weather);
-                    const blob = new Blob([report], { type: 'text/plain' });
-                    const url = URL.createObjectURL(blob);
-                    const win = window.open(url, '_blank');
-                    if (win) win.document.title = `ICS-209 — ${selectedCluster.name}`;
+                    setIcs209Report(report);
                   }}
                 >
                   <FileText className="h-3.5 w-3.5 mr-1.5" />
@@ -737,7 +738,15 @@ export function CommandPanel() {
           </TabsContent>
         </div>
       </Tabs>
-    </div>
+      </div>
+
+      {ics209Report && (
+        <ICS209Modal
+          report={ics209Report}
+          onClose={() => setIcs209Report(null)}
+        />
+      )}
+    </>
   );
 }
 
