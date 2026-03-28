@@ -919,6 +919,16 @@ export function FireMap() {
               'space-color': 'rgba(5, 5, 10, 1)',
               'star-intensity': 0.15,
             });
+            // Add 3D terrain for dramatic mountainous California landscape
+            if (!map.getSource('mapbox-dem')) {
+              map.addSource('mapbox-dem', {
+                type: 'raster-dem',
+                url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                tileSize: 512,
+                maxzoom: 14,
+              });
+              map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+            }
           }}
         />
       </DeckGL>

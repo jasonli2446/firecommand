@@ -30,8 +30,8 @@ export function generateEvacuationZones(clusters: FireCluster[]): EvacuationZone
       id: `evac_${counter}`,
       clusterId: cluster.id,
       center: [
-        cluster.centroid[0] + (Math.random() - 0.3) * 0.05,
-        cluster.centroid[1] - 0.02,
+        cluster.centroid[0] + (Math.random() - 0.5) * 0.05,
+        cluster.centroid[1] + (Math.random() - 0.5) * 0.03,
       ],
       radiusMiles,
       riskLevel,

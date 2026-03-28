@@ -75,19 +75,23 @@ export function NotificationContainer() {
     <div className="fixed top-20 right-4 z-[60] flex flex-col gap-2 max-w-[320px]">
       {notifications.map((n) => {
         const Icon = ICON_MAP[n.type];
+        const age = Date.now() - n.timestamp;
+        const isFading = age > 3000; // Start fading 1s before removal
         return (
           <div
             key={n.id}
-            className={`flex items-start gap-2 px-3 py-2 rounded-lg border glass-panel text-sm ${COLOR_MAP[n.type]} animate-in slide-in-from-right`}
+            className={`flex items-start gap-2 px-3 py-2 rounded-lg border glass-panel text-sm ${COLOR_MAP[n.type]} transition-all duration-500`}
             style={{
               animation: 'panel-slide-in 0.3s ease-out',
+              opacity: isFading ? 0 : 1,
+              transform: isFading ? 'translateX(20px)' : 'translateX(0)',
             }}
           >
             <Icon className="h-4 w-4 mt-0.5 shrink-0" />
             <span className="flex-1 text-xs">{n.message}</span>
             <button
               onClick={() => dismiss(n.id)}
-              className="shrink-0 opacity-50 hover:opacity-100"
+              className="shrink-0 opacity-50 hover:opacity-100 cursor-pointer"
             >
               <X className="h-3 w-3" />
             </button>
