@@ -82,6 +82,12 @@ export function useDemoMode(callbacks: DemoCallbacks) {
         });
         if (sorted.length > 0) {
           selectCluster(sorted[0].id);
+          // Brief satellite view for terrain context
+          const { setMapStyle } = useAppStore.getState();
+          setMapStyle('satellite');
+          setTimeout(() => {
+            useAppStore.getState().setMapStyle('dark');
+          }, 4000);
           timeoutRef.current = setTimeout(() => setDemoStep('show_ai_tab'), 2500);
         } else {
           setDemoStep('complete');
