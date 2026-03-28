@@ -365,10 +365,11 @@ export function CommandPanel() {
                       value={fireClusters.length.toString()}
                     />
                     <MetricCard
-                      label="Critical"
-                      value={fireClusters
-                        .filter((c) => c.severity === 'critical')
-                        .length.toString()}
+                      label={fireClusters.some((c) => c.severity === 'critical') ? 'Critical' : 'High Sev.'}
+                      value={(fireClusters.some((c) => c.severity === 'critical')
+                        ? fireClusters.filter((c) => c.severity === 'critical').length
+                        : fireClusters.filter((c) => c.severity === 'high').length
+                      ).toString()}
                     />
                     <MetricCard
                       label="Total Acres"
