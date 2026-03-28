@@ -6,7 +6,14 @@ import DeckGL from '@deck.gl/react';
 import { ScatterplotLayer, PolygonLayer, ArcLayer, TextLayer } from '@deck.gl/layers';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import { FlyToInterpolator } from '@deck.gl/core';
+import { luma } from '@luma.gl/core';
+import { webgl2Adapter } from '@luma.gl/webgl';
 import { useAppStore } from '@/store/app-store';
+
+// Force WebGL — prevents luma.gl from crashing on WebGPU detection
+if (typeof window !== 'undefined') {
+  luma.registerAdapters([webgl2Adapter]);
+}
 import type { FireDetection, FireCluster } from '@/types/fire';
 import type { Resource } from '@/types/resource';
 import type { EvacuationZone } from '@/types/evacuation';
@@ -497,6 +504,7 @@ export function FireMap() {
       billboard: true,
       sizeMinPixels: 10,
       sizeMaxPixels: 14,
+      fontSettings: { sdf: true },
       outlineWidth: 3,
       outlineColor: [0, 0, 0, 200] as [number, number, number, number],
       updateTriggers: {
