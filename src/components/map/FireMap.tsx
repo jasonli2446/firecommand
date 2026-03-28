@@ -21,12 +21,13 @@ import type { PickingInfo } from '@deck.gl/core';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
+// Start zoomed out, then animate in
 const INITIAL_VIEW_STATE = {
   longitude: -119.5,
   latitude: 37.5,
-  zoom: 6,
-  pitch: 45,
-  bearing: -15,
+  zoom: 5.5,
+  pitch: 30,
+  bearing: -30,
   minZoom: 5,
   maxZoom: 15,
 };
@@ -257,6 +258,26 @@ export function FireMap() {
   // Controlled view state for fly-to animations
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
 
+  // Opening cinematic sweep when data first loads
+  const hasAnimated = useRef(false);
+  useEffect(() => {
+    if (hasAnimated.current || fireClusters.length === 0) return;
+    hasAnimated.current = true;
+
+    // Delay slightly to let the map render first
+    const timer = setTimeout(() => {
+      setViewState((prev) => ({
+        ...prev,
+        zoom: 6.2,
+        pitch: 45,
+        bearing: -15,
+        transitionDuration: 3500,
+        transitionInterpolator: new FlyToInterpolator(),
+      }));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [fireClusters.length]);
+
   // Fly to selected cluster — cinematic bearing rotation during tour
   useEffect(() => {
     if (!selectedClusterId) {
@@ -266,10 +287,10 @@ export function FireMap() {
           ...prev,
           longitude: -119.5,
           latitude: 37.5,
-          zoom: 6,
+          zoom: 6.2,
           pitch: 45,
           bearing: -15,
-          transitionDuration: 2500,
+          transitionDuration: 3000,
           transitionInterpolator: new FlyToInterpolator(),
         }));
       }
