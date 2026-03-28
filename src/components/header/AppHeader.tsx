@@ -78,7 +78,7 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
               )}
             </div>
             <div>
-              <span className="text-sm font-bold tracking-widest text-white uppercase">
+              <span className="text-sm font-bold tracking-widest uppercase text-gradient-fire">
                 FireCommand
               </span>
               <span className="hidden sm:inline text-[10px] text-muted-foreground/60 ml-2 uppercase tracking-widest">

@@ -28,16 +28,16 @@ export function LoadingScreen() {
         <Flame className="h-16 w-16 text-orange-500 relative z-10 animate-pulse" />
       </div>
 
-      <h1 className="text-2xl font-bold tracking-[0.3em] text-white uppercase mb-1">
+      <h1 className="text-2xl font-bold tracking-[0.3em] uppercase mb-1 text-gradient-fire">
         FireCommand
       </h1>
-      <p className="text-[10px] text-muted-foreground/50 tracking-[0.4em] uppercase mb-8">
+      <p className="text-[10px] text-muted-foreground/60 tracking-[0.4em] uppercase mb-8">
         Palantir Foundry
       </p>
 
       <div className="flex flex-col items-center gap-4 w-64">
         {/* Progress bar */}
-        <div className="w-full h-0.5 bg-white/5 rounded-full overflow-hidden">
+        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-700 ease-out"
             style={{ width: `${((stage + 1) / STAGES.length) * 100}%` }}

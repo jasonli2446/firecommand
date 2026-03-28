@@ -116,9 +116,9 @@ export function TimelineBar() {
               setTimelinePosition(0);
               setIsPlaying(false);
             }}
-            className="h-7 w-7 p-0"
+            className="h-8 w-8 p-0"
           >
-            <SkipBack className="h-3.5 w-3.5" />
+            <SkipBack className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
@@ -127,12 +127,12 @@ export function TimelineBar() {
               if (timelinePosition >= 0.999) setTimelinePosition(0);
               setIsPlaying(!isPlaying);
             }}
-            className="h-8 w-8 p-0"
+            className="h-9 w-9 p-0"
           >
             {isPlaying ? (
-              <Pause className="h-4 w-4" />
+              <Pause className="h-4.5 w-4.5" />
             ) : (
-              <Play className="h-4 w-4" />
+              <Play className="h-4.5 w-4.5" />
             )}
           </Button>
         </div>
@@ -144,7 +144,7 @@ export function TimelineBar() {
               variant={playbackSpeed === speed ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setPlaybackSpeed(speed)}
-              className="h-6 px-1.5 text-[10px]"
+              className="h-7 px-2 text-xs"
             >
               {speed}x
             </Button>
@@ -154,9 +154,9 @@ export function TimelineBar() {
         {/* Sparkline + Slider */}
         <div className="flex-1 flex flex-col gap-0 min-w-0">
           {/* Sparkline visualization */}
-          <div className="flex items-end h-5 gap-px px-0.5">
+          <div className="relative flex items-end h-7 gap-px px-0.5">
             {sparkline.map((count, i) => {
-              const height = Math.max(1, (count / sparklineMax) * 20);
+              const height = Math.max(1, (count / sparklineMax) * 28);
               const isActive = i / SPARKLINE_BINS <= timelinePosition;
               return (
                 <div
@@ -175,6 +175,15 @@ export function TimelineBar() {
                 />
               );
             })}
+            {/* Glowing playhead line */}
+            <div
+              className="absolute bottom-0 w-0.5 h-full pointer-events-none transition-all duration-150"
+              style={{
+                left: `${timelinePosition * 100}%`,
+                background: 'linear-gradient(to top, rgba(59, 130, 246, 0.9), rgba(34, 211, 238, 0.7))',
+                boxShadow: '0 0 8px rgba(59, 130, 246, 0.8), 0 0 12px rgba(34, 211, 238, 0.6)',
+              }}
+            />
           </div>
 
           {/* Slider */}
@@ -190,7 +199,7 @@ export function TimelineBar() {
           />
 
           {/* Time labels */}
-          <div className="flex justify-between text-[9px] text-muted-foreground px-0.5 -mt-0.5">
+          <div className="flex justify-between text-[10px] text-muted-foreground px-0.5 -mt-0.5">
             <span>{startLabel}</span>
             <span>{endLabel}</span>
           </div>
