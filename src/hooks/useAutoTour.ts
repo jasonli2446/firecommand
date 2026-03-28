@@ -36,10 +36,11 @@ export function useAutoTour() {
       return sd !== 0 ? sd : b.totalFRP - a.totalFRP;
     });
 
-    // Only tour the top fires (critical + high, max 5)
-    const tourFires = sorted
-      .filter((c) => c.severity === 'critical' || c.severity === 'high')
-      .slice(0, 5);
+    // Tour top fires (critical + high preferred, include moderate if needed)
+    const highSev = sorted.filter((c) => c.severity === 'critical' || c.severity === 'high');
+    const tourFires = highSev.length >= 3
+      ? highSev.slice(0, 5)
+      : sorted.filter((c) => c.severity !== 'low').slice(0, 5);
 
     if (tourStep < tourFires.length) {
       // Select the fire (triggers fly-to via FireMap useEffect)

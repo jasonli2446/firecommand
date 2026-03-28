@@ -738,6 +738,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 
 function ExecuteButton({ onExecute }: { onExecute: () => void }) {
   const [executed, setExecuted] = useState(false);
+  const actionLog = useAppStore((s) => s.actionLog);
 
   const handleExecute = () => {
     onExecute();
@@ -745,12 +746,29 @@ function ExecuteButton({ onExecute }: { onExecute: () => void }) {
   };
 
   if (executed) {
+    // Show the most recent deploy actions from the log
+    const recentDeploys = actionLog
+      .filter((e) => e.type === 'deploy')
+      .slice(0, 8);
+
     return (
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-        <Check className="h-4 w-4 text-emerald-400" />
-        <span className="text-sm text-emerald-400 font-medium">
-          Resources deployed — check map for updates
-        </span>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+          <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span className="text-sm text-emerald-400 font-medium">
+            Plan executed — {recentDeploys.length} resources deploying
+          </span>
+        </div>
+        {recentDeploys.length > 0 && (
+          <div className="space-y-0.5 pl-1">
+            {recentDeploys.map((entry) => (
+              <div key={entry.id} className="flex items-center gap-1.5 text-[11px] text-blue-400/80">
+                <span className="h-1 w-1 rounded-full bg-blue-400/60 shrink-0" />
+                {entry.message}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
