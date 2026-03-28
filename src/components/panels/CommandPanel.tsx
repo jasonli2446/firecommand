@@ -16,6 +16,7 @@ import { generateICS209 } from '@/lib/ics209-export';
 import { ICS209Modal } from '@/components/ICS209Modal';
 import { ResourceDonut } from '@/components/ResourceDonut';
 import { OntologyGraph } from '@/components/OntologyGraph';
+import { SystemStatus } from '@/components/SystemStatus';
 
 const SEVERITY_BADGE_COLORS: Record<string, string> = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -531,6 +532,9 @@ export function CommandPanel() {
 
                 {/* Ontology visualization */}
                 <OntologyGraph />
+
+                {/* System Status */}
+                <SystemStatus />
               </div>
             )}
           </TabsContent>
