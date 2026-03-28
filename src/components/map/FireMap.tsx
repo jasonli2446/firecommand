@@ -255,6 +255,7 @@ export function FireMap() {
     tourStep,
     pendingFlyTo,
     setPendingFlyTo,
+    mapStyle,
   } = useAppStore();
 
   // Controlled view state for fly-to animations
@@ -1001,6 +1002,10 @@ export function FireMap() {
     [selectedClusterId, selectCluster]
   );
 
+  const mapboxStyle = mapStyle === 'satellite'
+    ? 'mapbox://styles/mapbox/satellite-streets-v12'
+    : 'mapbox://styles/mapbox/dark-v11';
+
   return (
     <div className="absolute inset-0">
       <DeckGL
@@ -1014,7 +1019,7 @@ export function FireMap() {
       >
         <Map
           mapboxAccessToken={MAPBOX_TOKEN}
-          mapStyle="mapbox://styles/mapbox/dark-v11"
+          mapStyle={mapboxStyle}
           onLoad={(e) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const map = e.target as any;

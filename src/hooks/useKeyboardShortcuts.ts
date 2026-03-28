@@ -122,6 +122,12 @@ export function useKeyboardShortcuts() {
         case '?':
           store.setShowHelp(!store.showHelp);
           break;
+        case 'm':
+        case 'M': {
+          const { mapStyle, setMapStyle } = useAppStore.getState();
+          setMapStyle(mapStyle === 'dark' ? 'satellite' : 'dark');
+          break;
+        }
       }
     };
 

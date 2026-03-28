@@ -1,6 +1,6 @@
 'use client';
 
-import { Flame, Radio, Satellite, PanelRightOpen, PanelRightClose, AlertTriangle, Compass } from 'lucide-react';
+import { Flame, Radio, Satellite, PanelRightOpen, PanelRightClose, AlertTriangle, Compass, Globe, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
@@ -15,7 +15,7 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onStopTour }: AppHeaderProps) {
-  const { fireClusters, resources, evacuationZones, panelOpen, setPanelOpen } =
+  const { fireClusters, resources, evacuationZones, panelOpen, setPanelOpen, mapStyle, setMapStyle } =
     useAppStore();
 
   const criticalCount = fireClusters.filter(
@@ -134,6 +134,18 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
             <Badge variant="secondary" className="text-xs hidden sm:flex">
               {activeResources} deployed
             </Badge>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-white"
+              onClick={() => {
+                setMapStyle(mapStyle === 'dark' ? 'satellite' : 'dark');
+              }}
+              title={mapStyle === 'dark' ? 'Switch to satellite view' : 'Switch to dark view'}
+            >
+              {mapStyle === 'dark' ? <Globe className="h-4 w-4" /> : <Map className="h-4 w-4" />}
+            </Button>
 
             {tourActive ? (
               <Button

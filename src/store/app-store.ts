@@ -31,6 +31,7 @@ interface AppState {
   tourStep: number;
   triggerAIAnalyze: (() => void) | null;
   pendingFlyTo: [number, number] | null;
+  mapStyle: 'dark' | 'satellite';
 
   setFireDetections: (detections: FireDetection[]) => void;
   setFireClusters: (clusters: FireCluster[]) => void;
@@ -47,6 +48,7 @@ interface AppState {
   setTourState: (active: boolean, step: number) => void;
   setTriggerAIAnalyze: (fn: (() => void) | null) => void;
   setPendingFlyTo: (coords: [number, number] | null) => void;
+  setMapStyle: (style: 'dark' | 'satellite') => void;
   deployResource: (resourceId: string, clusterId: string) => void;
   recallResource: (resourceId: string) => void;
   executeAIPlan: (recommendationText?: string) => void;
@@ -126,6 +128,7 @@ export const useAppStore = create<AppState>((set) => ({
   tourStep: -1,
   triggerAIAnalyze: null,
   pendingFlyTo: null,
+  mapStyle: 'dark',
 
   setFireDetections: (detections) => set({ fireDetections: detections }),
   setFireClusters: (clusters) => set({ fireClusters: clusters }),
@@ -142,6 +145,7 @@ export const useAppStore = create<AppState>((set) => ({
   setTourState: (active, step) => set({ tourActive: active, tourStep: step }),
   setTriggerAIAnalyze: (fn) => set({ triggerAIAnalyze: fn }),
   setPendingFlyTo: (coords) => set({ pendingFlyTo: coords }),
+  setMapStyle: (style) => set({ mapStyle: style }),
   addLogEntry: (type, message) =>
     set((state) => ({
       actionLog: [
