@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppStore } from '@/store/app-store';
-import { Flame, MapPin, Thermometer, Wind } from 'lucide-react';
+import { Flame, MapPin, Thermometer, Wind, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 export function TourOverlay() {
   const tourActive = useAppStore((s) => s.tourActive);
@@ -88,6 +88,26 @@ export function TourOverlay() {
             <span className={`text-xs font-bold uppercase ${sevColor}`}>
               {cluster.severity}
             </span>
+            <div className="flex items-center gap-1 justify-end mt-1">
+              {cluster.trend === 'growing' && (
+                <>
+                  <TrendingUp className="h-3 w-3 text-red-400" />
+                  <span className="text-[10px] text-red-400 font-semibold">GROWING</span>
+                </>
+              )}
+              {cluster.trend === 'stable' && (
+                <>
+                  <Minus className="h-3 w-3 text-yellow-400" />
+                  <span className="text-[10px] text-yellow-400 font-semibold">STABLE</span>
+                </>
+              )}
+              {cluster.trend === 'declining' && (
+                <>
+                  <TrendingDown className="h-3 w-3 text-green-400" />
+                  <span className="text-[10px] text-green-400 font-semibold">DECLINING</span>
+                </>
+              )}
+            </div>
             {assignedCount > 0 && (
               <p className="text-[10px] text-blue-400 mt-0.5">
                 {assignedCount} resources

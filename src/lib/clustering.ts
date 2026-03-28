@@ -183,6 +183,26 @@ export function clusterFires(detections: FireDetection[]): FireCluster[] {
     else if (totalFRP > 20 || points.length > 2) severity = 'moderate';
     else severity = 'low';
 
+    // Calculate growth trend based on detection timing
+    let trend: FireCluster['trend'];
+    const timeSpan = Math.max(...dates) - Math.min(...dates);
+    if (timeSpan === 0 || points.length === 1) {
+      // Single detection or all at same time → treat as growing
+      trend = 'growing';
+    } else {
+      const recentThreshold = Math.min(...dates) + (timeSpan * 2 / 3);
+      const recentCount = dates.filter(d => d >= recentThreshold).length;
+      const recentPercentage = (recentCount / points.length) * 100;
+
+      if (recentPercentage > 50) {
+        trend = 'growing';
+      } else if (recentPercentage < 25) {
+        trend = 'declining';
+      } else {
+        trend = 'stable';
+      }
+    }
+
     // Use nearest California landmark if available, fallback to NATO
     const landmark = findNearestLandmark(avgLat, avgLon, usedLandmarkNames);
     let name: string;
@@ -206,6 +226,7 @@ export function clusterFires(detections: FireDetection[]): FireCluster[] {
       lastDetected: new Date(Math.max(...dates)),
       estimatedAcres,
       name,
+      trend,
     });
   }
 

@@ -802,6 +802,8 @@ export function FireMap() {
           (r) => r.assignedClusterId === d.id && (r.status === 'deployed' || r.status === 'en_route')
         ).length;
         let label = d.name;
+        if (d.trend === 'growing') label += ' ↑';
+        else if (d.trend === 'declining') label += ' ↓';
         if (pct > 0) label += `  ${pct}%`;
         if (assignedCount > 0) label += `  [${assignedCount}]`;
         return label;

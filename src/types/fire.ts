@@ -22,4 +22,5 @@ export interface FireCluster {
   lastDetected: Date;
   estimatedAcres: number;
   name: string;
+  trend: 'growing' | 'stable' | 'declining';
 }
