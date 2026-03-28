@@ -8,6 +8,7 @@ const SHORTCUTS = [
   { key: '?', action: 'Toggle this help' },
   { key: 'P', action: 'Toggle command panel' },
   { key: 'T', action: 'Auto-tour critical fires' },
+  { key: 'Shift+D', action: 'Demo mode (tour + select)' },
   { key: 'Esc', action: 'Stop tour / deselect / close' },
   { key: '1 / 2 / 4', action: 'Playback speed' },
   { key: '\u21E7+1-4', action: 'Switch panel tab' },

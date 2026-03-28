@@ -15,6 +15,7 @@ import { TourOverlay } from '@/components/TourOverlay';
 import { useFireData } from '@/hooks/useFireData';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAutoTour } from '@/hooks/useAutoTour';
+import { useDemoMode } from '@/hooks/useDemoMode';
 import { useAppStore } from '@/store/app-store';
 import { generateResources } from '@/lib/mock-resources';
 
@@ -22,23 +23,26 @@ export default function Home() {
   const { isLoading, lastUpdated } = useFireData();
   useKeyboardShortcuts();
   const { tourActive, startTour, stopTour } = useAutoTour();
+  const { demoActive, startDemo, stopDemo } = useDemoMode(startTour, stopTour);
   const setResources = useAppStore((s) => s.setResources);
   const fireClusters = useAppStore((s) => s.fireClusters);
   const resources = useAppStore((s) => s.resources);
 
   const addLogEntry = useAppStore((s) => s.addLogEntry);
 
-  // 'T' key toggles auto-tour
+  // 'T' key toggles auto-tour, 'D' key starts demo mode
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === 't' || e.key === 'T') {
         tourActive ? stopTour() : startTour();
+      } else if (e.key === 'D' && !e.ctrlKey && !e.metaKey) {
+        demoActive ? stopDemo() : startDemo();
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [tourActive, startTour, stopTour]);
+  }, [tourActive, startTour, stopTour, demoActive, startDemo, stopDemo]);
 
   // Generate resources once on mount
   useEffect(() => {
