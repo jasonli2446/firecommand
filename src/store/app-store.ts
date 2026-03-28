@@ -4,11 +4,19 @@ import { Resource } from '@/types/resource';
 import { EvacuationZone } from '@/types/evacuation';
 import { notify } from '@/components/Notifications';
 
+export interface ActionLogEntry {
+  id: string;
+  timestamp: number;
+  type: 'deploy' | 'recall' | 'ai_plan' | 'system';
+  message: string;
+}
+
 interface AppState {
   fireDetections: FireDetection[];
   fireClusters: FireCluster[];
   resources: Resource[];
   evacuationZones: EvacuationZone[];
+  actionLog: ActionLogEntry[];
 
   selectedClusterId: string | null;
   panelOpen: boolean;
@@ -30,6 +38,7 @@ interface AppState {
   deployResource: (resourceId: string, clusterId: string) => void;
   recallResource: (resourceId: string) => void;
   executeAIPlan: () => void;
+  addLogEntry: (type: ActionLogEntry['type'], message: string) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -37,6 +46,7 @@ export const useAppStore = create<AppState>((set) => ({
   fireClusters: [],
   resources: [],
   evacuationZones: [],
+  actionLog: [],
 
   selectedClusterId: null,
   panelOpen: true,
@@ -55,6 +65,13 @@ export const useAppStore = create<AppState>((set) => ({
   setTimelinePosition: (pos) => set({ timelinePosition: pos }),
   setIsPlaying: (playing) => set({ isPlaying: playing }),
   setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
+  addLogEntry: (type, message) =>
+    set((state) => ({
+      actionLog: [
+        { id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, timestamp: Date.now(), type, message },
+        ...state.actionLog,
+      ].slice(0, 50), // Keep last 50 entries
+    })),
   deployResource: (resourceId, clusterId) =>
     set((state) => {
       const resource = state.resources.find((r) => r.id === resourceId);
@@ -66,6 +83,10 @@ export const useAppStore = create<AppState>((set) => ({
         resources: state.resources.map((r) =>
           r.id === resourceId ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId, deployedAt: Date.now() } : r
         ),
+        actionLog: [
+          { id: `log_${Date.now()}`, timestamp: Date.now(), type: 'deploy' as const, message: `${resource?.name || resourceId} → ${cluster?.name || clusterId}` },
+          ...state.actionLog,
+        ].slice(0, 50),
       };
     }),
   recallResource: (resourceId) =>
@@ -78,6 +99,10 @@ export const useAppStore = create<AppState>((set) => ({
         resources: state.resources.map((r) =>
           r.id === resourceId ? { ...r, status: 'available' as const, assignedClusterId: null, deployedAt: undefined } : r
         ),
+        actionLog: [
+          { id: `log_${Date.now()}`, timestamp: Date.now(), type: 'recall' as const, message: `${resource?.name || resourceId} recalled to base` },
+          ...state.actionLog,
+        ].slice(0, 50),
       };
     }),
   executeAIPlan: () =>
@@ -116,12 +141,23 @@ export const useAppStore = create<AppState>((set) => ({
         );
       }
 
+      const logEntries: ActionLogEntry[] = [
+        { id: `log_${Date.now()}_plan`, timestamp: Date.now(), type: 'ai_plan', message: `AIP plan executed for ${cluster.name}: ${toDeployList.length} resources` },
+        ...toDeployList.map((r, i) => ({
+          id: `log_${Date.now()}_${i}`,
+          timestamp: Date.now() + i,
+          type: 'deploy' as const,
+          message: `${r.name} (${r.type.replace('_', ' ')}) → ${cluster.name}`,
+        })),
+      ];
+
       return {
         resources: state.resources.map((r) =>
           toDeploy.has(r.id)
             ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId, deployedAt: Date.now() }
             : r
         ),
+        actionLog: [...logEntries, ...state.actionLog].slice(0, 50),
       };
     }),
 }));

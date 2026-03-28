@@ -9,6 +9,7 @@ import { MapStatsOverlay } from '@/components/map/MapStatsOverlay';
 import { MapLegend } from '@/components/map/MapLegend';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { NotificationContainer } from '@/components/Notifications';
+import { ActivityLog } from '@/components/ActivityLog';
 import { useFireData } from '@/hooks/useFireData';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAutoTour } from '@/hooks/useAutoTour';
@@ -23,10 +24,13 @@ export default function Home() {
   const fireClusters = useAppStore((s) => s.fireClusters);
   const resources = useAppStore((s) => s.resources);
 
+  const addLogEntry = useAppStore((s) => s.addLogEntry);
+
   // Generate resources once on mount
   useEffect(() => {
     setResources(generateResources());
-  }, [setResources]);
+    addLogEntry('system', 'FireCommand online — FIRMS data loaded');
+  }, [setResources, addLogEntry]);
 
   // Auto-assign deployed/en_route resources to nearest fire clusters
   useEffect(() => {
@@ -102,6 +106,7 @@ export default function Home() {
       <MapStatsOverlay />
       <CommandPanel />
       <TimelineBar />
+      <ActivityLog />
       <NotificationContainer />
     </div>
   );
