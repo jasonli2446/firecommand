@@ -250,11 +250,104 @@ export function CommandPanel() {
                 </div>
               </>
             ) : (
-              <div className="text-center text-muted-foreground py-12">
-                <Activity className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                <p className="text-sm">
-                  Click a fire on the map to view details
-                </p>
+              <div className="space-y-4">
+                <div className="text-center text-muted-foreground py-4">
+                  <Activity className="h-6 w-6 mx-auto mb-2 opacity-40" />
+                  <p className="text-xs">
+                    Click a fire on the map to view details
+                  </p>
+                </div>
+
+                {/* Operational Summary */}
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Operational Summary
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <MetricCard
+                      label="Active Fires"
+                      value={fireClusters.length.toString()}
+                    />
+                    <MetricCard
+                      label="Critical"
+                      value={fireClusters
+                        .filter((c) => c.severity === 'critical')
+                        .length.toString()}
+                    />
+                    <MetricCard
+                      label="Total Acres"
+                      value={fireClusters
+                        .reduce((s, c) => s + c.estimatedAcres, 0)
+                        .toLocaleString()}
+                    />
+                    <MetricCard
+                      label="Detections"
+                      value={fireClusters
+                        .reduce((s, c) => s + c.points.length, 0)
+                        .toLocaleString()}
+                    />
+                  </div>
+                </div>
+
+                {/* Top fires by severity */}
+                {fireClusters.length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      Fires by Severity
+                    </h3>
+                    <div className="space-y-1">
+                      {[...fireClusters]
+                        .sort((a, b) => b.totalFRP - a.totalFRP)
+                        .slice(0, 6)
+                        .map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => useAppStore.getState().selectCluster(c.id)}
+                            className="w-full flex items-center justify-between py-1.5 px-2 rounded bg-white/5 hover:bg-white/10 transition-colors text-sm cursor-pointer"
+                          >
+                            <span className="text-white font-medium">
+                              {c.name}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-muted-foreground">
+                                {c.estimatedAcres.toLocaleString()} ac
+                              </span>
+                              <Badge
+                                className={`text-[10px] ${SEVERITY_BADGE_COLORS[c.severity]}`}
+                              >
+                                {c.severity.toUpperCase()}
+                              </Badge>
+                            </div>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Resource status summary */}
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Resource Readiness
+                  </h3>
+                  <div className="flex gap-2">
+                    {(['available', 'deployed', 'en_route', 'maintenance'] as const).map(
+                      (status) => {
+                        const count = resources.filter(
+                          (r) => r.status === status
+                        ).length;
+                        if (count === 0) return null;
+                        return (
+                          <Badge
+                            key={status}
+                            className={`text-[10px] ${STATUS_COLORS[status]}`}
+                          >
+                            {count} {status.replace('_', ' ')}
+                          </Badge>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </TabsContent>

@@ -39,7 +39,7 @@ export const useAppStore = create<AppState>((set) => ({
   evacuationZones: [],
 
   selectedClusterId: null,
-  panelOpen: false,
+  panelOpen: true,
   activeTab: 'overview',
   timelinePosition: 1,
   isPlaying: false,
