@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check, FileText, TrendingUp, TrendingDown, Minus, Flame, Plane, Users, Tractor, Droplets } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // ScrollArea from base-ui doesn't scroll in flex layouts — use native overflow
@@ -101,12 +101,14 @@ export function CommandPanel() {
     );
   }, [weather?.windDirection, weather?.windSpeed, setSelectedWind]);
 
-  // Register analyze function with store for demo mode
+  // Register analyze function with store for demo mode (use ref to avoid infinite loop)
+  const analyzeRef = useRef<() => void>(() => analyze(weather));
+  analyzeRef.current = () => analyze(weather);
   const setTriggerAIAnalyze = useAppStore((s) => s.setTriggerAIAnalyze);
   useEffect(() => {
-    setTriggerAIAnalyze(() => analyze(weather));
+    setTriggerAIAnalyze(() => analyzeRef.current());
     return () => setTriggerAIAnalyze(null);
-  }, [analyze, weather, setTriggerAIAnalyze]);
+  }, [setTriggerAIAnalyze]);
 
   if (!panelOpen) return null;
 
