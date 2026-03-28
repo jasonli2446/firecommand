@@ -14,6 +14,7 @@ import { useAIAgent } from '@/hooks/useAIAgent';
 import { WindCompass } from '@/components/WindCompass';
 import { generateICS209 } from '@/lib/ics209-export';
 import { ICS209Modal } from '@/components/ICS209Modal';
+import { ResourceDonut } from '@/components/ResourceDonut';
 
 const SEVERITY_BADGE_COLORS: Record<string, string> = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -486,24 +487,15 @@ export function CommandPanel() {
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                     Resource Readiness
                   </h3>
-                  <div className="flex gap-2">
-                    {(['available', 'deployed', 'en_route', 'maintenance'] as const).map(
-                      (status) => {
-                        const count = resources.filter(
-                          (r) => r.status === status
-                        ).length;
-                        if (count === 0) return null;
-                        return (
-                          <Badge
-                            key={status}
-                            className={`text-[10px] ${STATUS_COLORS[status]}`}
-                          >
-                            {count} {status.replace('_', ' ')}
-                          </Badge>
-                        );
-                      }
-                    )}
-                  </div>
+                  <ResourceDonut
+                    total={resources.length}
+                    segments={[
+                      { label: 'Available', count: resources.filter(r => r.status === 'available').length, color: '#22c55e' },
+                      { label: 'Deployed', count: resources.filter(r => r.status === 'deployed').length, color: '#3b82f6' },
+                      { label: 'En Route', count: resources.filter(r => r.status === 'en_route').length, color: '#facc15' },
+                      { label: 'Maintenance', count: resources.filter(r => r.status === 'maintenance').length, color: '#6b7280' },
+                    ]}
+                  />
                 </div>
               </div>
             )}

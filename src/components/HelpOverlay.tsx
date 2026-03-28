@@ -14,6 +14,7 @@ const SHORTCUTS = [
   { key: '\u21E7+1-4', action: 'Switch panel tab' },
   { key: '\u2190 / \u2192', action: 'Step timeline back / forward' },
   { key: '\u2318+\u2190/\u2192', action: 'Cycle through fire clusters' },
+  { key: 'M', action: 'Toggle satellite / dark map' },
 ];
 
 export function HelpOverlay() {
