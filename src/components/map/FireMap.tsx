@@ -711,6 +711,28 @@ export function FireMap() {
       },
     }),
 
+    // Selection lock-on outer ring (pulses at different rate)
+    new ScatterplotLayer<FireCluster>({
+      id: 'selected-cluster-lock',
+      data: fireClusters.filter((c) => c.id === selectedClusterId),
+      getPosition: (d: FireCluster) => d.centroid,
+      getRadius: (d: FireCluster) => Math.sqrt(d.totalFRP + 1) * 180,
+      getFillColor: [0, 0, 0, 0] as [number, number, number, number],
+      radiusMinPixels: 18,
+      radiusMaxPixels: 70,
+      stroked: true,
+      getLineColor: () => {
+        const phase = (Date.now() % 2000) / 2000;
+        const alpha = Math.round(100 * (0.3 + 0.7 * Math.abs(Math.sin(phase * Math.PI))));
+        return [59, 130, 246, alpha] as [number, number, number, number];
+      },
+      lineWidthMinPixels: 1,
+      updateTriggers: {
+        getLineColor: animTickRef.current,
+        data: selectedClusterId,
+      },
+    }),
+
     // Containment arc rings around clusters with deployed resources
     new PolygonLayer<FireCluster>({
       id: 'containment-arcs',

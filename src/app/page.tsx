@@ -131,6 +131,8 @@ export default function Home() {
           <div className="absolute inset-0 scan-lines z-[1] pointer-events-none" />
           <div className="absolute inset-0 map-gradient-bottom z-[1]" />
           <div className="absolute inset-0 map-grid-pattern z-[1]" />
+          <div className="absolute inset-0 reticle-corners z-[2] pointer-events-none" />
+          <div className="absolute inset-0 reticle-corners-bottom z-[2] pointer-events-none" />
           <AppHeader lastUpdated={lastUpdated} isLoading={isLoading} tourActive={tourActive} onStartTour={startTour} onStopTour={stopTour} />
           <MapLegend />
           <MapStatsOverlay />

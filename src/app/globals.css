@@ -187,6 +187,59 @@
   );
 }
 
+/* Targeting reticle corners */
+.reticle-corners::before,
+.reticle-corners::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  border-color: rgba(59, 130, 246, 0.15);
+  border-style: solid;
+}
+
+.reticle-corners::before {
+  top: 60px;
+  left: 8px;
+  width: 40px;
+  height: 40px;
+  border-width: 2px 0 0 2px;
+}
+
+.reticle-corners::after {
+  top: 60px;
+  right: 428px;
+  width: 40px;
+  height: 40px;
+  border-width: 2px 2px 0 0;
+}
+
+/* Bottom corner brackets need a separate element */
+.reticle-corners-bottom::before {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  bottom: 80px;
+  left: 8px;
+  width: 40px;
+  height: 40px;
+  border-color: rgba(59, 130, 246, 0.15);
+  border-style: solid;
+  border-width: 0 0 2px 2px;
+}
+
+.reticle-corners-bottom::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  bottom: 80px;
+  right: 428px;
+  width: 40px;
+  height: 40px;
+  border-color: rgba(59, 130, 246, 0.15);
+  border-style: solid;
+  border-width: 0 2px 2px 0;
+}
+
 /* Bottom gradient overlay for smooth blend into timeline */
 .map-gradient-bottom {
   pointer-events: none;
