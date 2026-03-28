@@ -27,20 +27,29 @@ export function useKeyboardShortcuts() {
           store.setPanelOpen(!store.panelOpen);
           break;
         case 'Escape':
-          if (store.selectedClusterId) {
+          if (store.tourActive) {
+            store.setTourState(false, -1);
+            store.selectCluster(null);
+          } else if (store.selectedClusterId) {
             store.selectCluster(null);
           } else if (store.panelOpen) {
             store.setPanelOpen(false);
           }
           break;
         case '1':
-          store.setPlaybackSpeed(1);
+          if (e.shiftKey) { store.setActiveTab('overview'); store.setPanelOpen(true); }
+          else store.setPlaybackSpeed(1);
           break;
         case '2':
-          store.setPlaybackSpeed(2);
+          if (e.shiftKey) { store.setActiveTab('ai'); store.setPanelOpen(true); }
+          else store.setPlaybackSpeed(2);
+          break;
+        case '3':
+          if (e.shiftKey) { store.setActiveTab('resources'); store.setPanelOpen(true); }
           break;
         case '4':
-          store.setPlaybackSpeed(4);
+          if (e.shiftKey) { store.setActiveTab('evacuations'); store.setPanelOpen(true); }
+          else store.setPlaybackSpeed(4);
           break;
         case 'ArrowLeft':
           e.preventDefault();

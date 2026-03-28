@@ -7,10 +7,11 @@ const SHORTCUTS = [
   { key: 'Space', action: 'Play / Pause timeline' },
   { key: '?', action: 'Toggle this help' },
   { key: 'P', action: 'Toggle command panel' },
-  { key: 'Esc', action: 'Deselect fire / close panel' },
-  { key: '1 / 2 / 4', action: 'Playback speed' },
-  { key: '\u2190 / \u2192', action: 'Step timeline back / forward' },
   { key: 'T', action: 'Auto-tour critical fires' },
+  { key: 'Esc', action: 'Stop tour / deselect / close' },
+  { key: '1 / 2 / 4', action: 'Playback speed' },
+  { key: '\u21E7+1-4', action: 'Switch panel tab' },
+  { key: '\u2190 / \u2192', action: 'Step timeline back / forward' },
 ];
 
 export function HelpOverlay() {

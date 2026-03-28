@@ -4,7 +4,7 @@ import { Flame, Radio, Satellite, PanelRightOpen, PanelRightClose, AlertTriangle
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 interface AppHeaderProps {
   lastUpdated: Date | null;
@@ -110,9 +110,7 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
               <span className="text-blue-400 font-semibold tracking-wide">AIP</span>
             </div>
             {lastUpdated && (
-              <span className="hidden md:inline text-muted-foreground">
-                {lastUpdated.toLocaleTimeString()}
-              </span>
+              <DataFreshness lastUpdated={lastUpdated} />
             )}
           </div>
 
@@ -190,5 +188,27 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
         </div>
       )}
     </header>
+  );
+}
+
+function DataFreshness({ lastUpdated }: { lastUpdated: Date }) {
+  const [, setTick] = useState(0);
+
+  // Re-render every 30s to update relative time
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const elapsed = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+  const label =
+    elapsed < 60 ? 'just now' :
+    elapsed < 3600 ? `${Math.floor(elapsed / 60)}m ago` :
+    lastUpdated.toLocaleTimeString();
+
+  return (
+    <span className="hidden md:inline text-muted-foreground tabular-nums">
+      {label}
+    </span>
   );
 }

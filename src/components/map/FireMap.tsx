@@ -571,6 +571,25 @@ export function FireMap() {
       stroked: true,
     }),
 
+    // Outer glow behind fire clusters — bloom effect
+    new ScatterplotLayer<FireCluster>({
+      id: 'fire-cluster-glow',
+      data: fireClusters.filter((c) => c.severity !== 'low'),
+      getPosition: (d: FireCluster) => d.centroid,
+      getRadius: (d: FireCluster) => Math.sqrt(d.totalFRP + 1) * 250,
+      getFillColor: (d: FireCluster) => {
+        const base = SEVERITY_COLORS[d.severity] || [255, 255, 255, 100];
+        return [base[0], base[1], base[2], 25] as [number, number, number, number];
+      },
+      radiusMinPixels: 15,
+      radiusMaxPixels: 80,
+      radiusScale: pulseRef.current,
+      stroked: false,
+      updateTriggers: {
+        radiusScale: animTickRef.current,
+      },
+    }),
+
     new ScatterplotLayer<FireCluster>({
       id: 'fire-clusters',
       data: fireClusters,
