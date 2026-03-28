@@ -571,12 +571,18 @@ export function FireMap() {
 
     if (info.layer?.id === 'fire-clusters') {
       const cluster = info.object as FireCluster;
+      const pct = getClusterContainment(cluster.id, resources);
+      const deployedCount = resources.filter(
+        (r) => r.assignedClusterId === cluster.id && (r.status === 'deployed' || r.status === 'en_route')
+      ).length;
+      const pctColor = pct >= 60 ? '#22c55e' : pct >= 40 ? '#facc15' : pct >= 20 ? '#f97316' : '#ef4444';
       return {
-        html: `<div style="font-family: system-ui; padding: 4px 8px;">
-          <strong>${cluster.name}</strong><br/>
-          Severity: ${cluster.severity.toUpperCase()}<br/>
-          FRP: ${cluster.totalFRP} | Points: ${cluster.points.length}<br/>
-          ~${cluster.estimatedAcres.toLocaleString()} acres
+        html: `<div style="font-family: system-ui; padding: 6px 10px;">
+          <strong>${cluster.name}</strong>
+          <span style="color: ${pctColor}; float: right; margin-left: 12px; font-weight: 700;">${pct}%</span><br/>
+          <span style="opacity: 0.7; font-size: 11px;">Severity: ${cluster.severity.toUpperCase()} | ${cluster.estimatedAcres.toLocaleString()} ac</span><br/>
+          <span style="opacity: 0.7; font-size: 11px;">FRP: ${cluster.totalFRP} | ${cluster.points.length} detections</span>
+          ${deployedCount > 0 ? `<br/><span style="color: #3b82f6; font-size: 11px;">${deployedCount} resource${deployedCount > 1 ? 's' : ''} assigned</span>` : ''}
         </div>`,
         style: {
           backgroundColor: 'rgba(10,10,15,0.9)',
