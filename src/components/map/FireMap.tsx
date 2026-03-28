@@ -362,17 +362,19 @@ export function FireMap() {
       aggregation: 'SUM' as const,
     }),
 
-    // Fire spread prediction wedges (critical/high severity only)
+    // Fire spread prediction wedges (non-low severity)
     // Scale with timeline position so fires visually "grow" during scrub
     new PolygonLayer<FireCluster>({
       id: 'fire-spread-prediction',
       data: fireClusters.filter(
-        (c) => c.severity === 'critical' || c.severity === 'high'
+        (c) => c.severity !== 'low'
       ),
       getPolygon: (d: FireCluster) => {
         const baseRadius = d.severity === 'critical'
           ? Math.min(d.totalFRP * 0.02 + 5, 20)
-          : Math.min(d.totalFRP * 0.015 + 3, 12);
+          : d.severity === 'high'
+          ? Math.min(d.totalFRP * 0.015 + 3, 12)
+          : Math.min(d.totalFRP * 0.01 + 2, 8);
         // Scale from 20% to 100% based on timeline position
         const scale = 0.2 + 0.8 * Math.pow(timelinePosition, 0.7);
         return createSpreadWedge(d.centroid, DEFAULT_WIND_DIR, baseRadius * scale);
@@ -380,11 +382,15 @@ export function FireMap() {
       getFillColor: (d: FireCluster) =>
         d.severity === 'critical'
           ? [255, 60, 30, 18] as [number, number, number, number]
-          : [255, 140, 0, 12] as [number, number, number, number],
+          : d.severity === 'high'
+          ? [255, 140, 0, 12] as [number, number, number, number]
+          : [255, 180, 0, 8] as [number, number, number, number],
       getLineColor: (d: FireCluster) =>
         d.severity === 'critical'
           ? [255, 60, 30, 60] as [number, number, number, number]
-          : [255, 140, 0, 40] as [number, number, number, number],
+          : d.severity === 'high'
+          ? [255, 140, 0, 40] as [number, number, number, number]
+          : [255, 180, 0, 25] as [number, number, number, number],
       lineWidthMinPixels: 1,
       filled: true,
       stroked: true,
@@ -393,11 +399,11 @@ export function FireMap() {
       },
     }),
 
-    // Wind direction arrows at each critical/high fire
+    // Wind direction arrows at fires with elevated severity
     new PolygonLayer<FireCluster>({
       id: 'wind-arrows',
       data: fireClusters.filter(
-        (c) => c.severity === 'critical' || c.severity === 'high'
+        (c) => c.severity !== 'low'
       ),
       getPolygon: (d: FireCluster) =>
         createWindArrow(d.centroid, DEFAULT_WIND_DIR, Math.min(d.totalFRP * 0.01 + 2, 5)),
@@ -412,7 +418,7 @@ export function FireMap() {
     new TextLayer<FireCluster>({
       id: 'wind-labels',
       data: fireClusters.filter(
-        (c) => c.severity === 'critical' || c.severity === 'high'
+        (c) => c.severity !== 'low'
       ),
       getPosition: (d: FireCluster) => {
         const s = Math.min(d.totalFRP * 0.01 + 2, 5) / 69;

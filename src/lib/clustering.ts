@@ -99,9 +99,9 @@ export function clusterFires(detections: FireDetection[]): FireCluster[] {
     const estimatedAcres = Math.round(areaDeg2 * acresPerDeg2);
 
     let severity: FireCluster['severity'];
-    if (totalFRP > 500 || points.length > 20) severity = 'critical';
-    else if (totalFRP > 200 || points.length > 10) severity = 'high';
-    else if (totalFRP > 50 || points.length > 5) severity = 'moderate';
+    if (totalFRP > 200 || points.length > 8) severity = 'critical';
+    else if (totalFRP > 80 || points.length > 4) severity = 'high';
+    else if (totalFRP > 20 || points.length > 2) severity = 'moderate';
     else severity = 'low';
 
     const name = `Fire ${NATO_ALPHABET[nameIdx % NATO_ALPHABET.length]}${nameIdx >= NATO_ALPHABET.length ? ` ${Math.floor(nameIdx / NATO_ALPHABET.length) + 1}` : ''}`;
