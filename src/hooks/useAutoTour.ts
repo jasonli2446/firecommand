@@ -1,28 +1,27 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAppStore } from '@/store/app-store';
 
-const TOUR_DWELL_TIME = 4000; // Time spent on each fire (ms)
-const TOUR_TRANSITION_TIME = 2000; // Camera flight time (ms)
+const TOUR_DWELL_TIME = 5000; // Time spent on each fire (ms)
+const TOUR_TRANSITION_TIME = 2500; // Camera flight time (ms)
 
 export function useAutoTour() {
-  const [tourActive, setTourActive] = useState(false);
-  const [tourStep, setTourStep] = useState(-1);
+  const tourActive = useAppStore((s) => s.tourActive);
+  const tourStep = useAppStore((s) => s.tourStep);
+  const setTourState = useAppStore((s) => s.setTourState);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const startTour = useCallback(() => {
     const { fireClusters } = useAppStore.getState();
     if (fireClusters.length === 0) return;
-    setTourActive(true);
-    setTourStep(0);
-  }, []);
+    setTourState(true, 0);
+  }, [setTourState]);
 
   const stopTour = useCallback(() => {
-    setTourActive(false);
-    setTourStep(-1);
+    setTourState(false, -1);
     if (timerRef.current) clearTimeout(timerRef.current);
-  }, []);
+  }, [setTourState]);
 
   useEffect(() => {
     if (!tourActive || tourStep < 0) return;
@@ -48,19 +47,18 @@ export function useAutoTour() {
 
       // After dwell time, advance to next
       timerRef.current = setTimeout(() => {
-        setTourStep((s) => s + 1);
+        setTourState(true, tourStep + 1);
       }, TOUR_DWELL_TIME + TOUR_TRANSITION_TIME);
     } else {
       // Tour complete — deselect and zoom out
       selectCluster(null);
-      setTourActive(false);
-      setTourStep(-1);
+      setTourState(false, -1);
     }
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [tourActive, tourStep]);
+  }, [tourActive, tourStep, setTourState]);
 
   return { tourActive, startTour, stopTour };
 }

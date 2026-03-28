@@ -60,6 +60,16 @@ const RESOURCE_LABELS: Record<string, string> = {
   water_tender: 'W',
 };
 
+// Per-type accent colors for resource outline rings
+const RESOURCE_TYPE_COLORS: Record<string, [number, number, number, number]> = {
+  engine: [255, 100, 100, 200],      // red
+  helicopter: [100, 180, 255, 200],   // blue
+  hand_crew: [255, 200, 50, 200],     // gold
+  air_tanker: [180, 130, 255, 200],   // purple
+  dozer: [255, 160, 50, 200],         // orange
+  water_tender: [80, 200, 220, 200],  // cyan
+};
+
 const RISK_LINE_COLORS: Record<string, [number, number, number]> = {
   immediate: [255, 60, 60],
   warning: [255, 165, 0],
@@ -240,26 +250,50 @@ export function FireMap() {
     selectedWindDirection,
     selectedWindSpeed,
     timelinePosition,
+    tourActive,
+    tourStep,
   } = useAppStore();
 
   // Controlled view state for fly-to animations
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
 
-  // Fly to selected cluster
+  // Fly to selected cluster — cinematic bearing rotation during tour
   useEffect(() => {
-    if (!selectedClusterId) return;
+    if (!selectedClusterId) {
+      // When deselecting (e.g., tour ends), fly back to overview
+      if (tourActive === false && tourStep === -1) {
+        setViewState((prev) => ({
+          ...prev,
+          longitude: -119.5,
+          latitude: 37.5,
+          zoom: 6,
+          pitch: 45,
+          bearing: -15,
+          transitionDuration: 2500,
+          transitionInterpolator: new FlyToInterpolator(),
+        }));
+      }
+      return;
+    }
     const cluster = fireClusters.find((c) => c.id === selectedClusterId);
     if (!cluster) return;
+
+    // Cinematic bearing rotation during auto-tour
+    const bearing = tourActive ? -30 + tourStep * 12 : -15;
+    const zoom = tourActive ? 9.5 : Math.max(viewState.zoom, 8);
+    const pitch = tourActive ? 55 : 45;
 
     setViewState((prev) => ({
       ...prev,
       longitude: cluster.centroid[0],
       latitude: cluster.centroid[1],
-      zoom: Math.max(prev.zoom, 8),
-      transitionDuration: 1500,
+      zoom,
+      pitch,
+      bearing,
+      transitionDuration: tourActive ? 2500 : 1500,
       transitionInterpolator: new FlyToInterpolator(),
     }));
-  }, [selectedClusterId, fireClusters]);
+  }, [selectedClusterId, fireClusters, tourActive, tourStep]);
 
   // Animation refs — avoids re-rendering React at 60fps
   const pulseRef = useRef(1);
@@ -609,7 +643,13 @@ export function FireMap() {
       getPosition: (d: FireCluster) => d.centroid,
       getText: (d: FireCluster) => {
         const pct = containmentMap.get(d.id) || 0;
-        return pct > 0 ? `${d.name}  ${pct}%` : d.name;
+        const assignedCount = resources.filter(
+          (r) => r.assignedClusterId === d.id && (r.status === 'deployed' || r.status === 'en_route')
+        ).length;
+        let label = d.name;
+        if (pct > 0) label += `  ${pct}%`;
+        if (assignedCount > 0) label += `  [${assignedCount}]`;
+        return label;
       },
       getSize: 12,
       getColor: (d: FireCluster) => {
@@ -642,11 +682,12 @@ export function FireMap() {
       getPosition: (d: Resource) => [d.longitude, d.latitude],
       getFillColor: (d: Resource) =>
         STATUS_COLORS[d.status] || [255, 255, 255, 100],
-      radiusMinPixels: 6,
-      radiusMaxPixels: 10,
+      radiusMinPixels: 7,
+      radiusMaxPixels: 12,
       stroked: true,
-      getLineColor: [255, 255, 255, 120] as [number, number, number, number],
-      lineWidthMinPixels: 1,
+      getLineColor: (d: Resource) =>
+        RESOURCE_TYPE_COLORS[d.type] || [255, 255, 255, 120],
+      lineWidthMinPixels: 2,
       pickable: true,
     }),
 
@@ -657,15 +698,18 @@ export function FireMap() {
       getPosition: (d: Resource) => [d.longitude, d.latitude],
       getText: (d: Resource) => RESOURCE_LABELS[d.type] || '?',
       getSize: 10,
-      getColor: [255, 255, 255, 220] as [number, number, number, number],
+      getColor: [255, 255, 255, 240] as [number, number, number, number],
       getTextAnchor: 'middle' as const,
       getAlignmentBaseline: 'center' as const,
       fontWeight: 700,
       fontFamily: 'system-ui, sans-serif',
       billboard: true,
       sizeScale: 1,
-      sizeMinPixels: 8,
-      sizeMaxPixels: 12,
+      sizeMinPixels: 9,
+      sizeMaxPixels: 13,
+      fontSettings: { sdf: true },
+      outlineWidth: 3,
+      outlineColor: [0, 0, 0, 200] as [number, number, number, number],
     }),
 
     // Deployment arcs from resources to assigned fire clusters
@@ -751,12 +795,15 @@ export function FireMap() {
 
     if (info.layer?.id === 'resources') {
       const resource = info.object as Resource;
+      const statusColor = resource.status === 'available' ? '#22c55e' :
+                          resource.status === 'deployed' ? '#3b82f6' :
+                          resource.status === 'en_route' ? '#facc15' : '#6b7280';
       return {
-        html: `<div style="font-family: system-ui; padding: 4px 8px;">
-          <strong>${resource.name}</strong><br/>
-          Type: ${resource.type.replace('_', ' ')}<br/>
-          Status: ${resource.status}<br/>
-          Base: ${resource.homeBase}
+        html: `<div style="font-family: system-ui; padding: 6px 10px;">
+          <strong>${resource.name}</strong>
+          <span style="color: ${statusColor}; float: right; margin-left: 12px; font-size: 11px; font-weight: 600;">${resource.status.replace('_', ' ').toUpperCase()}</span><br/>
+          <span style="opacity: 0.7; font-size: 11px;">${resource.type.replace('_', ' ')} | ${resource.homeBase}</span>
+          ${resource.assignedClusterId ? `<br/><span style="color: #f97316; font-size: 11px;">Assigned to fire</span>` : ''}
         </div>`,
         style: {
           backgroundColor: 'rgba(10,10,15,0.9)',

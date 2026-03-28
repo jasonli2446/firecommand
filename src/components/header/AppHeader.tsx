@@ -81,19 +81,24 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
               <span className="text-sm font-bold tracking-widest text-white uppercase">
                 FireCommand
               </span>
-              <span className="hidden sm:inline text-xs text-muted-foreground ml-2">
-                Wildfire Response Coordinator
+              <span className="hidden sm:inline text-[10px] text-muted-foreground/60 ml-2 uppercase tracking-widest">
+                Palantir Foundry
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
-              <span
-                className={`h-2 w-2 rounded-full ${isLoading ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-500'}`}
-              />
-              <span className="text-muted-foreground font-medium">
-                {isLoading ? 'UPDATING' : 'LIVE'}
+              <span className="relative flex h-2.5 w-2.5">
+                {!isLoading && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50" />
+                )}
+                <span
+                  className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isLoading ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-500'}`}
+                />
+              </span>
+              <span className={`font-bold tracking-wider ${isLoading ? 'text-yellow-500' : 'text-emerald-400'}`}>
+                {isLoading ? 'SYNC' : 'LIVE'}
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground">
@@ -101,8 +106,8 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
               <span>VIIRS NOAA-20</span>
             </div>
             <div className="hidden md:flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-blue-500" />
-              <span className="text-blue-400 font-medium">AIP</span>
+              <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-blue-400 font-semibold tracking-wide">AIP</span>
             </div>
             {lastUpdated && (
               <span className="hidden md:inline text-muted-foreground">

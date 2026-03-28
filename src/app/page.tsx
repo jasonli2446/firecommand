@@ -11,6 +11,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { NotificationContainer } from '@/components/Notifications';
 import { ActivityLog } from '@/components/ActivityLog';
 import { HelpOverlay } from '@/components/HelpOverlay';
+import { TourOverlay } from '@/components/TourOverlay';
 import { useFireData } from '@/hooks/useFireData';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAutoTour } from '@/hooks/useAutoTour';
@@ -117,6 +118,7 @@ export default function Home() {
       <CommandPanel />
       <TimelineBar />
       <ActivityLog />
+      <TourOverlay />
       <HelpOverlay />
       <NotificationContainer />
     </div>
