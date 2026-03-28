@@ -36,7 +36,7 @@ export function MapStatsOverlay() {
   }, [deployedCount]);
 
   return (
-    <div className="absolute top-[76px] left-3 z-30 flex gap-2">
+    <div className="absolute top-[56px] left-3 z-30 flex gap-2">
       <StatPill
         icon={<Flame className="h-3 w-3 text-orange-500" />}
         label="Active Fires"

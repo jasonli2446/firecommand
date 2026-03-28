@@ -1,10 +1,10 @@
 'use client';
 
-import { Flame, Radio, Satellite, PanelRightOpen, PanelRightClose, AlertTriangle, Compass, Globe, Map } from 'lucide-react';
+import { Flame, Radio, Satellite, PanelRightOpen, PanelRightClose, Compass, Globe, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AppHeaderProps {
   lastUpdated: Date | null;
@@ -15,7 +15,7 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onStopTour }: AppHeaderProps) {
-  const { fireClusters, resources, evacuationZones, panelOpen, setPanelOpen, mapStyle, setMapStyle } =
+  const { fireClusters, resources, panelOpen, setPanelOpen, mapStyle, setMapStyle } =
     useAppStore();
 
   const criticalCount = fireClusters.filter(
@@ -27,54 +27,7 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
   const activeResources = resources.filter(
     (r) => r.status === 'deployed' || r.status === 'en_route'
   ).length;
-  const immediateEvacCount = evacuationZones.filter(
-    (z) => z.riskLevel === 'immediate'
-  ).length;
-  const totalPopAtRisk = evacuationZones.reduce(
-    (acc, z) => acc + z.population,
-    0
-  );
 
-  // Generate alert messages based on current situation
-  const alerts = useMemo(() => {
-    const msgs: string[] = [];
-    const critClusters = fireClusters.filter((c) => c.severity === 'critical');
-    const highClusters = fireClusters.filter((c) => c.severity === 'high');
-    for (const c of critClusters) {
-      msgs.push(
-        `CRITICAL: ${c.name} — ${c.estimatedAcres.toLocaleString()} acres, FRP ${c.totalFRP}`
-      );
-    }
-    for (const c of highClusters.slice(0, 3)) {
-      msgs.push(
-        `HIGH: ${c.name} — ${c.estimatedAcres.toLocaleString()} acres, ${c.points.length} detections`
-      );
-    }
-    if (immediateEvacCount > 0) {
-      msgs.push(
-        `${immediateEvacCount} IMMEDIATE evacuation zone${immediateEvacCount > 1 ? 's' : ''} active — ${totalPopAtRisk.toLocaleString()} people at risk`
-      );
-    }
-    const availableCount = resources.filter(
-      (r) => r.status === 'available'
-    ).length;
-    if (availableCount === 0) {
-      msgs.push(
-        `MUTUAL AID NEEDED: All resources committed — request reinforcements from neighboring jurisdictions`
-      );
-    } else if (availableCount < 5) {
-      msgs.push(
-        `LOW RESOURCES: Only ${availableCount} units available for deployment`
-      );
-    }
-    const growingFires = fireClusters.filter((c) => c.trend === 'growing' && (c.severity === 'critical' || c.severity === 'high'));
-    if (growingFires.length > 1) {
-      msgs.push(
-        `MULTI-FRONT ESCALATION: ${growingFires.length} high-severity fires actively growing`
-      );
-    }
-    return msgs;
-  }, [fireClusters, immediateEvacCount, totalPopAtRisk, resources]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -194,26 +147,6 @@ export function AppHeader({ lastUpdated, isLoading, tourActive, onStartTour, onS
         </div>
       </div>
 
-      {/* Alert ticker */}
-      {alerts.length > 0 && (
-        <div className="glass-panel border-b border-white/5 overflow-hidden h-7">
-          <div className="flex items-center h-full px-3 gap-2">
-            <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0 animate-pulse" />
-            <div className="overflow-hidden flex-1">
-              <div
-                className="whitespace-nowrap text-xs text-amber-400/90 font-medium inline-flex"
-                style={{
-                  animation: `ticker ${Math.max(alerts.join('   \u25C6   ').length * 0.12, 15)}s linear infinite`,
-                }}
-              >
-                {/* Duplicate alerts for seamless loop */}
-                <span>{alerts.join('   \u25C6   ')}</span>
-                <span className="ml-24">{alerts.join('   \u25C6   ')}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

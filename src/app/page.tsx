@@ -12,7 +12,6 @@ import { NotificationContainer } from '@/components/Notifications';
 import { ActivityLog } from '@/components/ActivityLog';
 import { HelpOverlay } from '@/components/HelpOverlay';
 import { TourOverlay } from '@/components/TourOverlay';
-import { MiniMap } from '@/components/map/MiniMap';
 import { useFireData } from '@/hooks/useFireData';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAutoTour } from '@/hooks/useAutoTour';
@@ -27,10 +26,10 @@ function ReticleCorners() {
   return (
     <>
       <div
-        className="absolute top-[60px] left-2 w-10 h-10 border-blue-500/15 border-l-2 border-t-2 pointer-events-none z-[2] transition-all duration-300"
+        className="absolute top-[52px] left-2 w-10 h-10 border-blue-500/15 border-l-2 border-t-2 pointer-events-none z-[2] transition-all duration-300"
       />
       <div
-        className="absolute top-[60px] w-10 h-10 border-blue-500/15 border-r-2 border-t-2 pointer-events-none z-[2] transition-all duration-300"
+        className="absolute top-[52px] w-10 h-10 border-blue-500/15 border-r-2 border-t-2 pointer-events-none z-[2] transition-all duration-300"
         style={{ right: rightOffset }}
       />
       <div
@@ -178,7 +177,6 @@ export default function Home() {
           <CommandPanel />
           <TimelineBar />
           <ActivityLog />
-          <MiniMap />
           <TourOverlay />
           <HelpOverlay />
           <NotificationContainer />

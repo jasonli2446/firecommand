@@ -16,7 +16,7 @@ const LEGEND_ITEMS = [
   {
     label: 'Resources',
     items: [
-      { color: 'bg-emerald-500', text: 'Available (E/H/C/A/D/W)' },
+      { color: 'bg-emerald-500', text: 'Available' },
       { color: 'bg-blue-500', text: 'Deployed' },
       { color: 'bg-yellow-400', text: 'En Route' },
       { color: 'bg-gray-500', text: 'Maintenance' },
@@ -36,7 +36,7 @@ export function MapLegend() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="absolute top-[120px] left-3 z-30">
+    <div className="absolute top-[100px] left-3 z-30">
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="glass-panel rounded-lg px-3 py-1.5 flex items-center gap-2 border border-white/5 text-xs text-muted-foreground hover:text-white transition-colors cursor-pointer"
@@ -91,10 +91,6 @@ export function MapLegend() {
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-4 rounded-sm bg-red-500/20 border border-red-500/40" />
                 <span className="text-[10px] text-gray-400">Spread Pred.</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-4 rounded-sm bg-sky-400/30 border border-sky-400/50" />
-                <span className="text-[10px] text-gray-400">Wind Dir.</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-4 rounded-full bg-emerald-500/30 border-2 border-emerald-500/60" />

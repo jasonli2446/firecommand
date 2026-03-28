@@ -53,15 +53,6 @@ const RISK_FILL_COLORS: Record<string, [number, number, number, number]> = {
   watch: [255, 255, 0, 15],
 };
 
-const RESOURCE_LABELS: Record<string, string> = {
-  engine: 'E',
-  helicopter: 'H',
-  hand_crew: 'C',
-  air_tanker: 'A',
-  dozer: 'D',
-  water_tender: 'W',
-};
-
 // Per-type accent colors for resource outline rings
 const RESOURCE_TYPE_COLORS: Record<string, [number, number, number, number]> = {
   engine: [255, 100, 100, 200],      // red
@@ -194,51 +185,6 @@ function createContainmentArc(
   // Close polygon
   points.push(points[0]);
   return points;
-}
-
-// Create a small wind-direction arrow near a fire cluster
-function createWindArrow(
-  center: [number, number],
-  windFromDeg: number,
-  sizeMiles = 2.5
-): [number, number][] {
-  const [lng, lat] = center;
-  const s = sizeMiles / 69;
-  const cosLat = Math.cos((lat * Math.PI) / 180);
-
-  // Fire spreads in opposite direction from wind source
-  const dir = ((windFromDeg + 180) * Math.PI) / 180;
-  const perp = dir + Math.PI / 2;
-
-  // Offset arrow from cluster center (so it sits beyond the fire dot)
-  const offset = s * 1.4;
-  const cx = lng + (offset * Math.sin(dir)) / cosLat;
-  const cy = lat + offset * Math.cos(dir);
-
-  // Kite/arrow shape: pointy tip forward, narrow tail
-  const tipDist = s * 0.5;
-  const tailDist = s * 0.5;
-  const wingDist = s * 0.18;
-  const notchDist = s * 0.15; // notch in tail for classic arrow look
-
-  return [
-    // Tip
-    [cx + (tipDist * Math.sin(dir)) / cosLat, cy + tipDist * Math.cos(dir)],
-    // Left wing
-    [cx + (wingDist * Math.sin(perp)) / cosLat, cy + wingDist * Math.cos(perp)],
-    // Left inner notch
-    [cx - (notchDist * Math.sin(dir)) / cosLat + (wingDist * 0.3 * Math.sin(perp)) / cosLat,
-     cy - notchDist * Math.cos(dir) + wingDist * 0.3 * Math.cos(perp)],
-    // Tail center
-    [cx - (tailDist * Math.sin(dir)) / cosLat, cy - tailDist * Math.cos(dir)],
-    // Right inner notch
-    [cx - (notchDist * Math.sin(dir)) / cosLat - (wingDist * 0.3 * Math.sin(perp)) / cosLat,
-     cy - notchDist * Math.cos(dir) - wingDist * 0.3 * Math.cos(perp)],
-    // Right wing
-    [cx - (wingDist * Math.sin(perp)) / cosLat, cy - wingDist * Math.cos(perp)],
-    // Close
-    [cx + (tipDist * Math.sin(dir)) / cosLat, cy + tipDist * Math.cos(dir)],
-  ];
 }
 
 export function FireMap() {
@@ -424,7 +370,7 @@ export function FireMap() {
           needsUpdate = true;
         }
       }
-      if (needsUpdate && deckRef.current) {
+      if (needsUpdate && deckRef.current?.redraw) {
         deckRef.current.redraw('containment');
       }
       animFrameRef.current = requestAnimationFrame(animate);
@@ -556,68 +502,7 @@ export function FireMap() {
       },
     }),
 
-    // Wind direction arrows at fires with elevated severity
-    new PolygonLayer<FireCluster>({
-      id: 'wind-arrows',
-      data: fireClusters.filter(
-        (c) => c.severity !== 'low'
-      ),
-      getPolygon: (d: FireCluster) =>
-        createWindArrow(d.centroid, getWindDir(d.id), Math.min(d.totalFRP * 0.01 + 2, 5)),
-      getFillColor: [135, 206, 250, 140] as [number, number, number, number],
-      getLineColor: [135, 206, 250, 200] as [number, number, number, number],
-      lineWidthMinPixels: 1,
-      filled: true,
-      stroked: true,
-      updateTriggers: {
-        getPolygon: [selectedClusterId, selectedWindDirection],
-      },
-    }),
-
-    // Wind direction labels
-    new TextLayer<FireCluster>({
-      id: 'wind-labels',
-      data: fireClusters.filter(
-        (c) => c.severity !== 'low'
-      ),
-      getPosition: (d: FireCluster) => {
-        const s = Math.min(d.totalFRP * 0.01 + 2, 5) / 69;
-        const cosLat = Math.cos((d.centroid[1] * Math.PI) / 180);
-        const windDir = getWindDir(d.id);
-        const dir = ((windDir + 180) * Math.PI) / 180;
-        const offset = s * 2.2;
-        return [
-          d.centroid[0] + (offset * Math.sin(dir)) / cosLat,
-          d.centroid[1] + offset * Math.cos(dir),
-        ];
-      },
-      getText: (d: FireCluster) => {
-        const windDir = getWindDir(d.id);
-        if (d.id === selectedClusterId && selectedWindSpeed !== null) {
-          return `${selectedWindSpeed} mph`;
-        }
-        const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-        return dirs[Math.round(((windDir + 180) % 360) / 45) % 8];
-      },
-      getSize: 9,
-      getColor: [135, 206, 250, 180] as [number, number, number, number],
-      getTextAnchor: 'middle' as const,
-      getAlignmentBaseline: 'center' as const,
-      fontWeight: 700,
-      fontFamily: 'system-ui, sans-serif',
-      billboard: true,
-      sizeMinPixels: 8,
-      sizeMaxPixels: 11,
-      fontSettings: { sdf: true },
-      outlineWidth: 2,
-      outlineColor: [0, 0, 0, 200] as [number, number, number, number],
-      updateTriggers: {
-        getPosition: [selectedClusterId, selectedWindDirection],
-        getText: [selectedClusterId, selectedWindSpeed, selectedWindDirection],
-      },
-    }),
-
-    // Threat pulse rings for critical fires — radar-style expanding rings
+    // Threat pulse ring for critical fires
     new ScatterplotLayer<FireCluster>({
       id: 'threat-pulse-ring-1',
       data: fireClusters.filter((c) => c.severity === 'critical'),
@@ -631,38 +516,12 @@ export function FireMap() {
       stroked: true,
       getLineColor: () => {
         const phase = (Date.now() % 3000) / 3000;
-        const alpha = Math.round(120 * (1 - phase));
+        const alpha = Math.round(100 * (1 - phase));
         return [255, 50, 50, alpha] as [number, number, number, number];
       },
-      lineWidthMinPixels: 2,
+      lineWidthMinPixels: 1.5,
       radiusMinPixels: 8,
-      radiusMaxPixels: 120,
-      updateTriggers: {
-        getRadius: animTickRef.current,
-        getLineColor: animTickRef.current,
-      },
-    }),
-
-    // Second pulse ring (offset phase)
-    new ScatterplotLayer<FireCluster>({
-      id: 'threat-pulse-ring-2',
-      data: fireClusters.filter((c) => c.severity === 'critical'),
-      getPosition: (d: FireCluster) => d.centroid,
-      getRadius: (d: FireCluster) => {
-        const base = Math.sqrt(d.totalFRP + 1) * 150;
-        const phase = ((Date.now() + 1500) % 3000) / 3000;
-        return base * (1 + phase * 2);
-      },
-      getFillColor: [0, 0, 0, 0] as [number, number, number, number],
-      stroked: true,
-      getLineColor: () => {
-        const phase = ((Date.now() + 1500) % 3000) / 3000;
-        const alpha = Math.round(80 * (1 - phase));
-        return [255, 50, 50, alpha] as [number, number, number, number];
-      },
-      lineWidthMinPixels: 1,
-      radiusMinPixels: 8,
-      radiusMaxPixels: 120,
+      radiusMaxPixels: 100,
       updateTriggers: {
         getRadius: animTickRef.current,
         getLineColor: animTickRef.current,
@@ -708,25 +567,6 @@ export function FireMap() {
       fontSettings: { sdf: true },
       outlineWidth: 2,
       outlineColor: [0, 0, 0, 180] as [number, number, number, number],
-    }),
-
-    // Outer glow behind fire clusters — bloom effect
-    new ScatterplotLayer<FireCluster>({
-      id: 'fire-cluster-glow',
-      data: fireClusters.filter((c) => c.severity !== 'low'),
-      getPosition: (d: FireCluster) => d.centroid,
-      getRadius: (d: FireCluster) => Math.sqrt(d.totalFRP + 1) * 250,
-      getFillColor: (d: FireCluster) => {
-        const base = SEVERITY_COLORS[d.severity] || [255, 255, 255, 100];
-        return [base[0], base[1], base[2], 25] as [number, number, number, number];
-      },
-      radiusMinPixels: 15,
-      radiusMaxPixels: 80,
-      radiusScale: pulseRef.current,
-      stroked: false,
-      updateTriggers: {
-        radiusScale: animTickRef.current,
-      },
     }),
 
     new ScatterplotLayer<FireCluster>({
@@ -821,18 +661,7 @@ export function FireMap() {
       id: 'cluster-labels',
       data: fireClusters,
       getPosition: (d: FireCluster) => d.centroid,
-      getText: (d: FireCluster) => {
-        const pct = containmentMap.get(d.id) || 0;
-        const assignedCount = resources.filter(
-          (r) => r.assignedClusterId === d.id && (r.status === 'deployed' || r.status === 'en_route')
-        ).length;
-        let label = d.name;
-        if (d.trend === 'growing') label += ' ↑';
-        else if (d.trend === 'declining') label += ' ↓';
-        if (pct > 0) label += `  ${pct}%`;
-        if (assignedCount > 0) label += `  [${assignedCount}]`;
-        return label;
-      },
+      getText: (d: FireCluster) => d.name,
       getSize: 12,
       getColor: (d: FireCluster) => {
         const pct = containmentMap.get(d.id) || 0;
@@ -873,27 +702,6 @@ export function FireMap() {
       pickable: true,
     }),
 
-    // Resource type labels
-    new TextLayer<Resource>({
-      id: 'resource-labels',
-      data: resources,
-      getPosition: (d: Resource) => [d.longitude, d.latitude],
-      getText: (d: Resource) => RESOURCE_LABELS[d.type] || '?',
-      getSize: 10,
-      getColor: [255, 255, 255, 240] as [number, number, number, number],
-      getTextAnchor: 'middle' as const,
-      getAlignmentBaseline: 'center' as const,
-      fontWeight: 700,
-      fontFamily: 'system-ui, sans-serif',
-      billboard: true,
-      sizeScale: 1,
-      sizeMinPixels: 9,
-      sizeMaxPixels: 13,
-      fontSettings: { sdf: true },
-      outlineWidth: 3,
-      outlineColor: [0, 0, 0, 200] as [number, number, number, number],
-    }),
-
     // Deployment arcs from resources to assigned fire clusters
     new ArcLayer<Resource>({
       id: 'deployment-arcs',
@@ -918,29 +726,6 @@ export function FireMap() {
       getWidth: (d: Resource) => d.status === 'en_route' ? 2.5 : 1.5,
       getHeight: 0.35,
       greatCircle: false,
-    }),
-
-    // Glow behind moving dots
-    new ScatterplotLayer<Resource>({
-      id: 'moving-resources-glow',
-      data: resources.filter((r) => r.status === 'en_route' && r.assignedClusterId && r.deployedAt),
-      getPosition: (d: Resource) => {
-        const cluster = fireClusters.find((c) => c.id === d.assignedClusterId);
-        if (!cluster || !d.deployedAt) return [d.longitude, d.latitude];
-        const elapsed = Date.now() - d.deployedAt;
-        const t = Math.min(1, elapsed / 8000);
-        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-        return [
-          d.longitude + (cluster.centroid[0] - d.longitude) * ease,
-          d.latitude + (cluster.centroid[1] - d.latitude) * ease,
-        ];
-      },
-      getFillColor: [250, 204, 21, 40] as [number, number, number, number],
-      getRadius: 3000,
-      radiusMinPixels: 10,
-      radiusMaxPixels: 25,
-      stroked: false,
-      updateTriggers: { getPosition: animTickRef.current },
     }),
 
     // Animated moving dots for en_route resources
