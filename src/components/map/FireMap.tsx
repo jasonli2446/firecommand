@@ -9,6 +9,7 @@ import { FlyToInterpolator } from '@deck.gl/core';
 import { luma } from '@luma.gl/core';
 import { webgl2Adapter } from '@luma.gl/webgl';
 import { useAppStore } from '@/store/app-store';
+import { computeFirePerimeter } from '@/lib/convex-hull';
 
 // Force WebGL — prevents luma.gl from crashing on WebGPU detection
 if (typeof window !== 'undefined') {
@@ -443,6 +444,36 @@ export function FireMap() {
   );
 
   const layers = useMemo(() => [
+    // Fire perimeter outlines (convex hull of detection points)
+    new PolygonLayer<FireCluster>({
+      id: 'fire-perimeters',
+      data: fireClusters.filter((c) => c.points.length >= 3),
+      getPolygon: (d: FireCluster) => {
+        const pts = d.points.map((p): [number, number] => [p.longitude, p.latitude]);
+        return computeFirePerimeter(pts, d.severity === 'critical' ? 0.8 : 0.4);
+      },
+      getFillColor: (d: FireCluster) =>
+        d.severity === 'critical'
+          ? [255, 50, 30, 8] as [number, number, number, number]
+          : d.severity === 'high'
+          ? [255, 120, 0, 6] as [number, number, number, number]
+          : [255, 180, 50, 4] as [number, number, number, number],
+      getLineColor: (d: FireCluster) =>
+        d.id === selectedClusterId
+          ? [255, 255, 255, 120] as [number, number, number, number]
+          : d.severity === 'critical'
+          ? [255, 80, 50, 80] as [number, number, number, number]
+          : d.severity === 'high'
+          ? [255, 140, 0, 60] as [number, number, number, number]
+          : [255, 180, 50, 40] as [number, number, number, number],
+      lineWidthMinPixels: 1.5,
+      filled: true,
+      stroked: true,
+      updateTriggers: {
+        getLineColor: selectedClusterId,
+      },
+    }),
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     new (HeatmapLayer as any)({
       id: 'fire-heatmap',
