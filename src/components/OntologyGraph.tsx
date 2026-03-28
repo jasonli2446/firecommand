@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 
 const NODES = [
@@ -31,6 +32,15 @@ export function OntologyGraph() {
     weather: clusterCount > 0 ? 1 : 0,
   };
 
+  // Stagger edge reveal animation
+  const [visibleEdges, setVisibleEdges] = useState(0);
+  useEffect(() => {
+    if (visibleEdges < EDGES.length) {
+      const timer = setTimeout(() => setVisibleEdges((v) => v + 1), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [visibleEdges]);
+
   return (
     <div className="glass-panel rounded-lg border border-white/10 p-3">
       <div className="flex items-center gap-2 mb-2">
@@ -38,19 +48,22 @@ export function OntologyGraph() {
         <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Ontology</span>
       </div>
       <svg width="320" height="160" className="block">
-        {/* Edges */}
-        {EDGES.map((edge) => {
+        {/* Edges — revealed sequentially */}
+        {EDGES.map((edge, i) => {
           const from = NODES.find((n) => n.id === edge.from)!;
           const to = NODES.find((n) => n.id === edge.to)!;
           const midX = (from.x + to.x) / 2;
           const midY = (from.y + to.y) / 2;
+          const visible = i < visibleEdges;
           return (
-            <g key={`${edge.from}-${edge.to}`}>
+            <g key={`${edge.from}-${edge.to}`} style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.5s ease-in' }}>
               <line
                 x1={from.x} y1={from.y}
                 x2={to.x} y2={to.y}
-                stroke="rgba(255,255,255,0.1)"
-                strokeWidth="1"
+                stroke={visible ? from.color : 'rgba(255,255,255,0.1)'}
+                strokeWidth="1.5"
+                opacity={visible ? 0.4 : 0.1}
+                style={{ transition: 'stroke 0.5s, opacity 0.5s' }}
               />
               <text
                 x={midX} y={midY - 4}
