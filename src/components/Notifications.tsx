@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { X, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { useAppStore } from '@/store/app-store';
 
 interface Notification {
   id: string;
@@ -41,6 +42,7 @@ const COLOR_MAP = {
 
 export function NotificationContainer() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const panelOpen = useAppStore((s) => s.panelOpen);
 
   const addNotification = useCallback((n: Notification) => {
     setNotifications((prev) => [...prev.slice(-4), n]); // Keep max 5
@@ -71,8 +73,10 @@ export function NotificationContainer() {
 
   if (!notifications.length) return null;
 
+  const rightOffset = panelOpen ? 'right-[436px]' : 'right-4';
+
   return (
-    <div className="fixed top-20 right-4 z-[60] flex flex-col gap-2 max-w-[320px]">
+    <div className={`fixed top-20 z-[60] flex flex-col gap-2 max-w-[320px] transition-all duration-300 ${rightOffset}`}>
       {notifications.map((n) => {
         const Icon = ICON_MAP[n.type];
         const age = Date.now() - n.timestamp;

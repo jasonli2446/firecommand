@@ -20,6 +20,30 @@ import { useDemoMode } from '@/hooks/useDemoMode';
 import { useAppStore } from '@/store/app-store';
 import { generateResources } from '@/lib/mock-resources';
 
+function ReticleCorners() {
+  const panelOpen = useAppStore((s) => s.panelOpen);
+  const rightOffset = panelOpen ? '428px' : '8px';
+
+  return (
+    <>
+      <div
+        className="absolute top-[60px] left-2 w-10 h-10 border-blue-500/15 border-l-2 border-t-2 pointer-events-none z-[2] transition-all duration-300"
+      />
+      <div
+        className="absolute top-[60px] w-10 h-10 border-blue-500/15 border-r-2 border-t-2 pointer-events-none z-[2] transition-all duration-300"
+        style={{ right: rightOffset }}
+      />
+      <div
+        className="absolute bottom-20 left-2 w-10 h-10 border-blue-500/15 border-l-2 border-b-2 pointer-events-none z-[2] transition-all duration-300"
+      />
+      <div
+        className="absolute bottom-20 w-10 h-10 border-blue-500/15 border-r-2 border-b-2 pointer-events-none z-[2] transition-all duration-300"
+        style={{ right: rightOffset }}
+      />
+    </>
+  );
+}
+
 export default function Home() {
   const { isLoading, lastUpdated } = useFireData();
   useKeyboardShortcuts();
@@ -28,6 +52,7 @@ export default function Home() {
   const setResources = useAppStore((s) => s.setResources);
   const fireClusters = useAppStore((s) => s.fireClusters);
   const resources = useAppStore((s) => s.resources);
+  const demoActiveFromStore = useAppStore((s) => s.demoActive);
 
   const addLogEntry = useAppStore((s) => s.addLogEntry);
 
@@ -132,9 +157,22 @@ export default function Home() {
           <div className="absolute inset-0 scan-lines z-[1] pointer-events-none" />
           <div className="absolute inset-0 map-gradient-bottom z-[1]" />
           <div className="absolute inset-0 map-grid-pattern z-[1]" />
-          <div className="absolute inset-0 reticle-corners z-[2] pointer-events-none" />
-          <div className="absolute inset-0 reticle-corners-bottom z-[2] pointer-events-none" />
+          <ReticleCorners />
           <AppHeader lastUpdated={lastUpdated} isLoading={isLoading} tourActive={tourActive} onStartTour={startTour} onStopTour={stopTour} />
+          {demoActiveFromStore && (
+            <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[55] flex items-center gap-3 glass-panel rounded-full px-5 py-2 border border-white/10">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600" />
+              </span>
+              <span className="text-[11px] font-bold tracking-[0.2em] text-white/80 uppercase">
+                FireCommand Demo — Live Analysis
+              </span>
+              <span className="text-[10px] text-muted-foreground font-mono">
+                Shift+D to stop
+              </span>
+            </div>
+          )}
           <MapLegend />
           <MapStatsOverlay />
           <CommandPanel />

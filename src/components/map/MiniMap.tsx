@@ -28,11 +28,14 @@ function toPixel(lng: number, lat: number): [number, number] {
 export function MiniMap() {
   const fireClusters = useAppStore((s) => s.fireClusters);
   const selectedClusterId = useAppStore((s) => s.selectedClusterId);
+  const panelOpen = useAppStore((s) => s.panelOpen);
 
   if (fireClusters.length === 0) return null;
 
+  const rightOffset = panelOpen ? 'right-[432px]' : 'right-3';
+
   return (
-    <div className="fixed bottom-[88px] right-[432px] z-30 glass-panel rounded-md border border-white/10 p-1.5 opacity-70 hover:opacity-100 transition-opacity">
+    <div className={`fixed bottom-[88px] z-30 glass-panel rounded-md border border-white/10 p-1.5 opacity-70 hover:opacity-100 transition-all duration-300 ${rightOffset}`}>
       <svg width={WIDTH} height={HEIGHT} className="block">
         {/* California outline (simplified) */}
         <path
