@@ -70,16 +70,12 @@ export default function Home() {
   }, [fireClusters.length]); // Only run when clusters first load
 
   // Auto-transition en_route → deployed after travel animation (8s)
+  // Use a stable interval that reads from store directly — no dependency on resources
   useEffect(() => {
-    const enRouteWithTime = resources.filter(
-      (r) => r.status === 'en_route' && r.deployedAt
-    );
-    if (!enRouteWithTime.length) return;
-
     const TRAVEL_DURATION = 8000;
     const timer = setInterval(() => {
-      const now = Date.now();
       const store = useAppStore.getState();
+      const now = Date.now();
       const toTransition = store.resources.filter(
         (r) => r.status === 'en_route' && r.deployedAt && now - r.deployedAt >= TRAVEL_DURATION
       );
@@ -91,9 +87,9 @@ export default function Home() {
           )
         );
       }
-    }, 1000);
+    }, 2000); // Check every 2s instead of 1s
     return () => clearInterval(timer);
-  }, [resources]);
+  }, []);
 
   if (isLoading && !fireClusters.length) {
     return <LoadingScreen />;

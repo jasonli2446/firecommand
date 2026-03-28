@@ -207,20 +207,27 @@ export function FireMap() {
     }));
   }, [selectedClusterId, fireClusters]);
 
-  // Use a ref for pulse animation — avoids re-rendering the entire component 60fps
+  // Animation refs — avoids re-rendering React at 60fps
   const pulseRef = useRef(1);
+  const animTickRef = useRef(0); // shared tick counter for updateTriggers
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const deckRef = useRef<any>(null);
 
   useEffect(() => {
     let frame: number;
     const start = Date.now();
+    let lastDraw = 0;
+    const FRAME_INTERVAL = 33; // ~30fps instead of 60fps
     const animate = () => {
-      const elapsed = (Date.now() - start) / 1000;
-      pulseRef.current = 1 + 0.15 * Math.sin(elapsed * 2);
-      // Only redraw the deck overlay, not re-render React
-      if (deckRef.current?.redraw) {
-        deckRef.current.redraw('pulse');
+      const now = Date.now();
+      if (now - lastDraw >= FRAME_INTERVAL) {
+        lastDraw = now;
+        const elapsed = (now - start) / 1000;
+        pulseRef.current = 1 + 0.15 * Math.sin(elapsed * 2);
+        animTickRef.current++;
+        if (deckRef.current?.redraw) {
+          deckRef.current.redraw('pulse');
+        }
       }
       frame = requestAnimationFrame(animate);
     };
@@ -258,6 +265,21 @@ export function FireMap() {
     }
     return fireDetections.slice(0, lo);
   }, [fireDetections, timelinePosition, timeRange, sortedTimestamps]);
+
+  // Pre-compute containment for all clusters — avoids O(clusters*resources) per layer per frame
+  const containmentMap = useMemo(() => {
+    const map = new globalThis.Map<string, number>();
+    for (const c of fireClusters) {
+      map.set(c.id, getClusterContainment(c.id, resources));
+    }
+    return map;
+  }, [fireClusters, resources]);
+
+  // Cache deployed count to avoid repeated .filter() in updateTriggers
+  const deployedCount = useMemo(
+    () => resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length,
+    [resources]
+  );
 
   const handleClusterClick = useCallback(
     (info: PickingInfo) => {
@@ -340,8 +362,8 @@ export function FireMap() {
       radiusMinPixels: 8,
       radiusMaxPixels: 120,
       updateTriggers: {
-        getRadius: Date.now(),
-        getLineColor: Date.now(),
+        getRadius: animTickRef.current,
+        getLineColor: animTickRef.current,
       },
     }),
 
@@ -366,8 +388,8 @@ export function FireMap() {
       radiusMinPixels: 8,
       radiusMaxPixels: 120,
       updateTriggers: {
-        getRadius: Date.now(),
-        getLineColor: Date.now(),
+        getRadius: animTickRef.current,
+        getLineColor: animTickRef.current,
       },
     }),
 
@@ -401,7 +423,7 @@ export function FireMap() {
       pickable: true,
       onClick: handleClusterClick,
       updateTriggers: {
-        radiusScale: Date.now(), // Force update on each draw call
+        radiusScale: animTickRef.current,
       },
     }),
 
@@ -419,7 +441,7 @@ export function FireMap() {
       getLineColor: [255, 255, 255, 200] as [number, number, number, number],
       lineWidthMinPixels: 2,
       updateTriggers: {
-        radiusScale: Date.now(),
+        radiusScale: animTickRef.current,
         data: selectedClusterId,
       },
     }),
@@ -427,14 +449,14 @@ export function FireMap() {
     // Containment arc rings around clusters with deployed resources
     new PolygonLayer<FireCluster>({
       id: 'containment-arcs',
-      data: fireClusters.filter((c) => getClusterContainment(c.id, resources) > 0),
+      data: fireClusters.filter((c) => (containmentMap.get(c.id) || 0) > 0),
       getPolygon: (d: FireCluster) => {
-        const pct = getClusterContainment(d.id, resources);
+        const pct = containmentMap.get(d.id) || 0;
         const radiusMiles = Math.sqrt(d.totalFRP + 1) * 0.04 + 1.5;
         return createContainmentArc(d.centroid, radiusMiles, pct);
       },
       getFillColor: (d: FireCluster) => {
-        const pct = getClusterContainment(d.id, resources);
+        const pct = containmentMap.get(d.id) || 0;
         if (pct >= 60) return [34, 197, 94, 160] as [number, number, number, number];
         if (pct >= 40) return [250, 204, 21, 140] as [number, number, number, number];
         if (pct >= 20) return [255, 165, 0, 130] as [number, number, number, number];
@@ -445,8 +467,8 @@ export function FireMap() {
       filled: true,
       stroked: true,
       updateTriggers: {
-        getPolygon: [resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length],
-        getFillColor: [resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length],
+        getPolygon: deployedCount,
+        getFillColor: deployedCount,
       },
     }),
 
@@ -456,12 +478,12 @@ export function FireMap() {
       data: fireClusters,
       getPosition: (d: FireCluster) => d.centroid,
       getText: (d: FireCluster) => {
-        const pct = getClusterContainment(d.id, resources);
+        const pct = containmentMap.get(d.id) || 0;
         return pct > 0 ? `${d.name}  ${pct}%` : d.name;
       },
       getSize: 12,
       getColor: (d: FireCluster) => {
-        const pct = getClusterContainment(d.id, resources);
+        const pct = containmentMap.get(d.id) || 0;
         if (pct >= 60) return [34, 197, 94, 255] as [number, number, number, number];
         if (pct >= 40) return [250, 204, 21, 255] as [number, number, number, number];
         if (pct > 0) return [255, 165, 0, 255] as [number, number, number, number];
@@ -478,8 +500,8 @@ export function FireMap() {
       outlineWidth: 3,
       outlineColor: [0, 0, 0, 200] as [number, number, number, number],
       updateTriggers: {
-        getText: [resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length],
-        getColor: [resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length],
+        getText: deployedCount,
+        getColor: deployedCount,
       },
     }),
 
@@ -563,18 +585,18 @@ export function FireMap() {
       getLineColor: [255, 255, 255, 200] as [number, number, number, number],
       lineWidthMinPixels: 1,
       updateTriggers: {
-        getPosition: Date.now(),
+        getPosition: animTickRef.current,
       },
     }),
-  ], [filteredDetections, fireClusters, resources, evacuationZones, selectedClusterId, handleClusterClick, timelinePosition]);
+  ], [filteredDetections, fireClusters, resources, evacuationZones, selectedClusterId, handleClusterClick, timelinePosition, containmentMap, deployedCount]);
 
   const getTooltip = useCallback((info: PickingInfo) => {
     if (!info.object) return null;
 
     if (info.layer?.id === 'fire-clusters') {
       const cluster = info.object as FireCluster;
-      const pct = getClusterContainment(cluster.id, resources);
-      const deployedCount = resources.filter(
+      const pct = containmentMap.get(cluster.id) || 0;
+      const clusterDeployed = resources.filter(
         (r) => r.assignedClusterId === cluster.id && (r.status === 'deployed' || r.status === 'en_route')
       ).length;
       const pctColor = pct >= 60 ? '#22c55e' : pct >= 40 ? '#facc15' : pct >= 20 ? '#f97316' : '#ef4444';
@@ -584,7 +606,7 @@ export function FireMap() {
           <span style="color: ${pctColor}; float: right; margin-left: 12px; font-weight: 700;">${pct}%</span><br/>
           <span style="opacity: 0.7; font-size: 11px;">Severity: ${cluster.severity.toUpperCase()} | ${cluster.estimatedAcres.toLocaleString()} ac</span><br/>
           <span style="opacity: 0.7; font-size: 11px;">FRP: ${cluster.totalFRP} | ${cluster.points.length} detections</span>
-          ${deployedCount > 0 ? `<br/><span style="color: #3b82f6; font-size: 11px;">${deployedCount} resource${deployedCount > 1 ? 's' : ''} assigned</span>` : ''}
+          ${clusterDeployed > 0 ? `<br/><span style="color: #3b82f6; font-size: 11px;">${clusterDeployed} resource${clusterDeployed > 1 ? 's' : ''} assigned</span>` : ''}
         </div>`,
         style: {
           backgroundColor: 'rgba(10,10,15,0.9)',
@@ -616,7 +638,7 @@ export function FireMap() {
     }
 
     return null;
-  }, []);
+  }, [containmentMap, resources]);
 
   return (
     <div className="absolute inset-0">
