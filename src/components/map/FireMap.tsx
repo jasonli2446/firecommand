@@ -408,6 +408,31 @@ export function FireMap() {
     return map;
   }, [fireClusters, resources]);
 
+  // Animated containment values — smoothly interpolate toward target
+  const animatedContainmentRef = useRef(new globalThis.Map<string, number>());
+  useEffect(() => {
+    const animate = () => {
+      const animated = animatedContainmentRef.current;
+      let needsUpdate = false;
+      for (const [id, target] of containmentMap) {
+        const current = animated.get(id) || 0;
+        if (Math.abs(current - target) > 0.5) {
+          animated.set(id, current + (target - current) * 0.08);
+          needsUpdate = true;
+        } else if (current !== target) {
+          animated.set(id, target);
+          needsUpdate = true;
+        }
+      }
+      if (needsUpdate && deckRef.current) {
+        deckRef.current.redraw('containment');
+      }
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
+    const animFrameRef = { current: requestAnimationFrame(animate) };
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [containmentMap]);
+
   // Cache deployed count to avoid repeated .filter() in updateTriggers
   const deployedCount = useMemo(
     () => resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length,
@@ -768,14 +793,14 @@ export function FireMap() {
     // Containment arc rings around clusters with deployed resources
     new PolygonLayer<FireCluster>({
       id: 'containment-arcs',
-      data: fireClusters.filter((c) => (containmentMap.get(c.id) || 0) > 0),
+      data: fireClusters.filter((c) => (animatedContainmentRef.current.get(c.id) || 0) > 0),
       getPolygon: (d: FireCluster) => {
-        const pct = containmentMap.get(d.id) || 0;
+        const pct = animatedContainmentRef.current.get(d.id) || 0;
         const radiusMiles = Math.sqrt(d.totalFRP + 1) * 0.04 + 1.5;
         return createContainmentArc(d.centroid, radiusMiles, pct);
       },
       getFillColor: (d: FireCluster) => {
-        const pct = containmentMap.get(d.id) || 0;
+        const pct = animatedContainmentRef.current.get(d.id) || 0;
         if (pct >= 60) return [34, 197, 94, 160] as [number, number, number, number];
         if (pct >= 40) return [250, 204, 21, 140] as [number, number, number, number];
         if (pct >= 20) return [255, 165, 0, 130] as [number, number, number, number];
