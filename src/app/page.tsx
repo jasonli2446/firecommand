@@ -23,7 +23,7 @@ export default function Home() {
   const { isLoading, lastUpdated } = useFireData();
   useKeyboardShortcuts();
   const { tourActive, startTour, stopTour } = useAutoTour();
-  const { demoActive, startDemo, stopDemo } = useDemoMode(startTour, stopTour);
+  const { demoActive, startDemo, stopDemo } = useDemoMode({ startTour, stopTour });
   const setResources = useAppStore((s) => s.setResources);
   const fireClusters = useAppStore((s) => s.fireClusters);
   const resources = useAppStore((s) => s.resources);

@@ -9,9 +9,17 @@ type DemoStep =
   | 'tour'
   | 'select_fire'
   | 'show_ai_tab'
+  | 'auto_analyze'
+  | 'auto_execute'
   | 'complete';
 
-export function useDemoMode(startTour: () => void, stopTour: () => void) {
+interface DemoCallbacks {
+  startTour: () => void;
+  stopTour: () => void;
+}
+
+export function useDemoMode(callbacks: DemoCallbacks) {
+  const { startTour, stopTour } = callbacks;
   const [demoActive, setDemoActive] = useState(false);
   const [demoStep, setDemoStep] = useState<DemoStep>('idle');
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -80,11 +88,36 @@ export function useDemoMode(startTour: () => void, stopTour: () => void) {
       }
 
       case 'show_ai_tab': {
-        const { setActiveTab, setPanelOpen } = useAppStore.getState();
+        const { setActiveTab, setPanelOpen, triggerAIAnalyze } = useAppStore.getState();
         setPanelOpen(true);
         setActiveTab('ai');
-        // Demo pauses here — user clicks "Analyze" and "Execute" manually
-        setDemoStep('complete');
+        if (triggerAIAnalyze) {
+          // Continue to automated analysis
+          timeoutRef.current = setTimeout(() => setDemoStep('auto_analyze'), 2000);
+        } else {
+          // Demo pauses here — user clicks "Analyze" and "Execute" manually
+          setDemoStep('complete');
+        }
+        break;
+      }
+
+      case 'auto_analyze': {
+        const { triggerAIAnalyze } = useAppStore.getState();
+        if (triggerAIAnalyze) {
+          triggerAIAnalyze();
+          // Wait for analysis to complete (streaming takes ~10-12s)
+          timeoutRef.current = setTimeout(() => setDemoStep('auto_execute'), 12000);
+        } else {
+          setDemoStep('complete');
+        }
+        break;
+      }
+
+      case 'auto_execute': {
+        const { executeAIPlan } = useAppStore.getState();
+        executeAIPlan();
+        // Wait a moment before completing
+        timeoutRef.current = setTimeout(() => setDemoStep('complete'), 2000);
         break;
       }
 

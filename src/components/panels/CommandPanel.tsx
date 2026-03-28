@@ -94,6 +94,13 @@ export function CommandPanel() {
     );
   }, [weather?.windDirection, weather?.windSpeed, setSelectedWind]);
 
+  // Register analyze function with store for demo mode
+  const setTriggerAIAnalyze = useAppStore((s) => s.setTriggerAIAnalyze);
+  useEffect(() => {
+    setTriggerAIAnalyze(() => analyze(weather));
+    return () => setTriggerAIAnalyze(null);
+  }, [analyze, weather, setTriggerAIAnalyze]);
+
   if (!panelOpen) return null;
 
   return (
