@@ -111,3 +111,57 @@
 .animate-fire-pulse {
   animation: fire-pulse 2s ease-in-out infinite;
 }
+
+/* AI recommendation content styles */
+.ai-recommendation-content h3 {
+  scroll-margin-top: 1rem;
+}
+
+.ai-recommendation-content strong {
+  letter-spacing: 0.01em;
+}
+
+/* Smooth panel transitions */
+.panel-enter {
+  animation: panel-slide-in 0.3s ease-out;
+}
+
+@keyframes panel-slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Gradient text utility */
+.text-gradient-fire {
+  background: linear-gradient(135deg, #ff6b35, #ff3333, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effects */
+.glow-orange {
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.3), 0 0 60px rgba(255, 107, 53, 0.1);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 50, 50, 0.3), 0 0 60px rgba(255, 50, 50, 0.1);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

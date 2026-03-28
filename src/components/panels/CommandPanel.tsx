@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAppStore } from '@/store/app-store';
 import { useWeatherData } from '@/hooks/useWeatherData';
 import { useAIAgent } from '@/hooks/useAIAgent';
+import { WindCompass } from '@/components/WindCompass';
 
 const SEVERITY_BADGE_COLORS: Record<string, string> = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -41,6 +42,8 @@ export function CommandPanel() {
     activeTab,
     setPanelOpen,
     setActiveTab,
+    deployResource,
+    recallResource,
   } = useAppStore();
 
   const { isAnalyzing, recommendation, error, analyze, clearRecommendation } =
@@ -56,7 +59,7 @@ export function CommandPanel() {
   if (!panelOpen) return null;
 
   return (
-    <div className="fixed top-12 right-0 bottom-16 w-[420px] z-40 glass-panel border-l border-white/5 flex flex-col">
+    <div className="fixed top-12 right-0 bottom-16 w-[420px] z-40 glass-panel border-l border-white/5 flex flex-col panel-enter">
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
         <span className="text-sm font-semibold text-white">Command Panel</span>
         <Button
@@ -155,43 +158,79 @@ export function CommandPanel() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="px-3 pb-3">
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Wind</span>
-                          <p className="text-white font-medium">
-                            {weather.windSpeed} mph{' '}
-                            {getCardinalDirection(weather.windDirection)}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Gusts</span>
-                          <p className="text-white font-medium">
-                            {Math.round(weather.windGust)} mph
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Temp</span>
-                          <p className="text-white font-medium">
-                            {weather.temperature}°F
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">
-                            Humidity
-                          </span>
-                          <p className="text-white font-medium">
-                            {weather.humidity}%
-                          </p>
+                      <div className="flex gap-3">
+                        <WindCompass
+                          direction={weather.windDirection}
+                          speed={weather.windSpeed}
+                        />
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm flex-1">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Wind</span>
+                            <p className="text-white font-medium text-sm">
+                              {weather.windSpeed} mph{' '}
+                              {getCardinalDirection(weather.windDirection)}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Gusts</span>
+                            <p className="text-white font-medium text-sm">
+                              {Math.round(weather.windGust)} mph
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Temp</span>
+                            <p className="text-white font-medium text-sm">
+                              {weather.temperature}°F
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Humidity</span>
+                            <p className="text-white font-medium text-sm">
+                              {weather.humidity}%
+                            </p>
+                          </div>
                         </div>
                       </div>
                       {weather.isFireWeatherWarning && (
-                        <Badge variant="destructive" className="mt-2 text-xs">
+                        <Badge variant="destructive" className="mt-2 text-xs glow-red">
                           FIRE WEATHER WARNING
                         </Badge>
                       )}
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Deployed resources for this cluster */}
+                {(() => {
+                  const deployedToCluster = resources.filter(
+                    (r) => r.assignedClusterId === selectedCluster.id
+                  );
+                  if (deployedToCluster.length === 0) return null;
+                  return (
+                    <Card className="bg-white/5 border-white/5">
+                      <CardHeader className="pb-2 pt-3 px-3">
+                        <CardTitle className="text-sm text-muted-foreground">
+                          Deployed Resources ({deployedToCluster.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-3 pb-3 space-y-1">
+                        {deployedToCluster.map((r) => (
+                          <div
+                            key={r.id}
+                            className="flex items-center justify-between text-xs"
+                          >
+                            <span className="text-white">{r.name}</span>
+                            <Badge
+                              className={`text-[10px] ${STATUS_COLORS[r.status]}`}
+                            >
+                              {r.status.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
 
                 <div className="text-xs text-muted-foreground space-y-1">
                   <p>
@@ -330,12 +369,34 @@ export function CommandPanel() {
                   {typeResources.map((r) => (
                     <div
                       key={r.id}
-                      className="flex items-center justify-between py-1.5 px-2 rounded bg-white/5 text-sm"
+                      className="flex items-center justify-between py-1.5 px-2 rounded bg-white/5 text-sm gap-2"
                     >
-                      <span className="text-white">{r.name}</span>
-                      <Badge className={`text-xs ${STATUS_COLORS[r.status]}`}>
-                        {r.status.replace('_', ' ')}
-                      </Badge>
+                      <span className="text-white truncate flex-1">{r.name}</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Badge className={`text-[10px] ${STATUS_COLORS[r.status]}`}>
+                          {r.status.replace('_', ' ')}
+                        </Badge>
+                        {selectedClusterId && r.status === 'available' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 px-1.5 text-[10px] text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                            onClick={() => deployResource(r.id, selectedClusterId)}
+                          >
+                            Deploy
+                          </Button>
+                        )}
+                        {(r.status === 'deployed' || r.status === 'en_route') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 px-1.5 text-[10px] text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                            onClick={() => recallResource(r.id)}
+                          >
+                            Recall
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

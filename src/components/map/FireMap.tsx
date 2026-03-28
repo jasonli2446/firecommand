@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import Map from 'react-map-gl/mapbox';
 import DeckGL from '@deck.gl/react';
-import { ScatterplotLayer, PolygonLayer } from '@deck.gl/layers';
+import { ScatterplotLayer, PolygonLayer, ArcLayer } from '@deck.gl/layers';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import { useAppStore } from '@/store/app-store';
 import type { FireDetection, FireCluster } from '@/types/fire';
@@ -47,6 +47,10 @@ const RISK_LINE_COLORS: Record<string, [number, number, number]> = {
   watch: [255, 255, 100],
 };
 
+// Default wind direction for spread prediction (degrees, 0=N, from direction)
+// 225° = from SW, so fire spreads NE — typical California Santa Ana pattern
+const DEFAULT_WIND_DIR = 225;
+
 // Pre-compute circle polygons and cache them
 const circleCache = new globalThis.Map<string, [number, number][]>();
 function createCirclePolygon(
@@ -70,6 +74,40 @@ function createCirclePolygon(
     ]);
   }
   circleCache.set(key, points);
+  return points;
+}
+
+// Create a wedge polygon for fire spread prediction
+const spreadCache = new globalThis.Map<string, [number, number][]>();
+function createSpreadWedge(
+  center: [number, number],
+  windFromDeg: number,
+  radiusMiles: number,
+  spreadAngleDeg = 60,
+  numPoints = 16
+): [number, number][] {
+  const key = `${center[0]},${center[1]},${windFromDeg},${radiusMiles}`;
+  const cached = spreadCache.get(key);
+  if (cached) return cached;
+
+  const [lng, lat] = center;
+  const radiusDeg = radiusMiles / 69;
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+
+  // Wind blows FROM windFromDeg, fire spreads in opposite direction
+  const spreadDirRad = ((windFromDeg + 180) * Math.PI) / 180;
+  const halfAngle = (spreadAngleDeg * Math.PI) / 360;
+
+  const points: [number, number][] = [[lng, lat]]; // Start at center
+  for (let i = 0; i <= numPoints; i++) {
+    const angle = spreadDirRad - halfAngle + (i / numPoints) * 2 * halfAngle;
+    points.push([
+      lng + (radiusDeg * Math.sin(angle)) / cosLat,
+      lat + radiusDeg * Math.cos(angle),
+    ]);
+  }
+  points.push([lng, lat]); // Close polygon
+  spreadCache.set(key, points);
   return points;
 }
 
@@ -164,6 +202,34 @@ export function FireMap() {
       aggregation: 'SUM' as const,
     }),
 
+    // Fire spread prediction wedges (critical/high severity only)
+    new PolygonLayer<FireCluster>({
+      id: 'fire-spread-prediction',
+      data: fireClusters.filter(
+        (c) => c.severity === 'critical' || c.severity === 'high'
+      ),
+      getPolygon: (d: FireCluster) =>
+        createSpreadWedge(
+          d.centroid,
+          DEFAULT_WIND_DIR,
+          // Spread radius based on severity and FRP
+          d.severity === 'critical'
+            ? Math.min(d.totalFRP * 0.02 + 5, 20)
+            : Math.min(d.totalFRP * 0.015 + 3, 12)
+        ),
+      getFillColor: (d: FireCluster) =>
+        d.severity === 'critical'
+          ? [255, 60, 30, 18] as [number, number, number, number]
+          : [255, 140, 0, 12] as [number, number, number, number],
+      getLineColor: (d: FireCluster) =>
+        d.severity === 'critical'
+          ? [255, 60, 30, 60] as [number, number, number, number]
+          : [255, 140, 0, 40] as [number, number, number, number],
+      lineWidthMinPixels: 1,
+      filled: true,
+      stroked: true,
+    }),
+
     new PolygonLayer<EvacuationZone>({
       id: 'evacuation-zones',
       data: evacuationZones,
@@ -210,6 +276,29 @@ export function FireMap() {
       getLineColor: [255, 255, 255, 120] as [number, number, number, number],
       lineWidthMinPixels: 1,
       pickable: true,
+    }),
+
+    // Deployment arcs from resources to assigned fire clusters
+    new ArcLayer<Resource>({
+      id: 'deployment-arcs',
+      data: resources.filter(
+        (r) =>
+          (r.status === 'deployed' || r.status === 'en_route') &&
+          r.assignedClusterId
+      ),
+      getSourcePosition: (d: Resource) => [d.longitude, d.latitude],
+      getTargetPosition: (d: Resource) => {
+        const cluster = fireClusters.find((c) => c.id === d.assignedClusterId);
+        return cluster ? cluster.centroid : [d.longitude, d.latitude];
+      },
+      getSourceColor: (d: Resource) =>
+        d.status === 'deployed'
+          ? [59, 130, 246, 180] as [number, number, number, number]
+          : [250, 204, 21, 180] as [number, number, number, number],
+      getTargetColor: [255, 100, 50, 180] as [number, number, number, number],
+      getWidth: 2,
+      getHeight: 0.3,
+      greatCircle: false,
     }),
   ], [filteredDetections, fireClusters, resources, evacuationZones, handleClusterClick]);
 
