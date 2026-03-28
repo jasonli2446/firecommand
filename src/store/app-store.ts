@@ -116,26 +116,28 @@ export const useAppStore = create<AppState>((set) => ({
       const cluster = state.fireClusters.find((c) => c.id === clusterId);
       if (!cluster) return state;
 
-      // Deploy resources based on cluster severity
-      const deployCount =
-        cluster.severity === 'critical' ? 6 :
-        cluster.severity === 'high' ? 4 : 2;
-
-      // Prioritize: helicopters/air_tankers for critical, engines/crews for others
-      const priorityTypes =
+      // Deploy a diverse mix of resources — one of each type when available
+      // This mirrors what the AI actually recommends (mixed asset deployment)
+      const typeQuotas: Record<string, number> =
         cluster.severity === 'critical'
-          ? ['helicopter', 'air_tanker', 'engine', 'hand_crew', 'water_tender', 'dozer']
-          : ['engine', 'hand_crew', 'water_tender', 'helicopter', 'dozer', 'air_tanker'];
+          ? { helicopter: 2, air_tanker: 1, engine: 3, hand_crew: 2, dozer: 1, water_tender: 1 }
+          : cluster.severity === 'high'
+          ? { helicopter: 1, air_tanker: 1, engine: 2, hand_crew: 1, dozer: 1, water_tender: 1 }
+          : { helicopter: 1, engine: 2, hand_crew: 1, water_tender: 1 };
 
-      const available = state.resources
-        .filter((r) => r.status === 'available')
-        .sort((a, b) => {
-          const aIdx = priorityTypes.indexOf(a.type);
-          const bIdx = priorityTypes.indexOf(b.type);
-          return aIdx - bIdx;
-        });
+      const available = state.resources.filter((r) => r.status === 'available');
+      const toDeployList: typeof available = [];
+      const typeCounts: Record<string, number> = {};
 
-      const toDeployList = available.slice(0, deployCount);
+      for (const type of Object.keys(typeQuotas)) {
+        const quota = typeQuotas[type];
+        const ofType = available.filter(
+          (r) => r.type === type && !toDeployList.includes(r)
+        );
+        const take = ofType.slice(0, quota);
+        toDeployList.push(...take);
+        if (take.length > 0) typeCounts[type] = take.length;
+      }
       const toDeploy = new Set(toDeployList.map((r) => r.id));
 
       if (toDeployList.length > 0) {
