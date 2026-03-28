@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Activity, Brain, Truck, Shield } from 'lucide-react';
+import { X, Activity, Brain, Truck, Shield, Loader2, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useAppStore } from '@/store/app-store';
 import { useWeatherData } from '@/hooks/useWeatherData';
+import { useAIAgent } from '@/hooks/useAIAgent';
 
 const SEVERITY_BADGE_COLORS: Record<string, string> = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -41,6 +42,9 @@ export function CommandPanel() {
     setPanelOpen,
     setActiveTab,
   } = useAppStore();
+
+  const { isAnalyzing, recommendation, error, analyze, clearRecommendation } =
+    useAIAgent();
 
   const selectedCluster = fireClusters.find((c) => c.id === selectedClusterId);
 
@@ -215,20 +219,81 @@ export function CommandPanel() {
           </TabsContent>
 
           <TabsContent value="ai" className="p-4 mt-0">
-            <div className="text-center text-muted-foreground py-12">
-              <Brain className="h-8 w-8 mx-auto mb-3 opacity-40" />
-              <p className="text-sm font-medium mb-1">AI Agent</p>
-              <p className="text-xs">
-                Select a fire and analyze the situation
-              </p>
-              <Button
-                className="mt-4"
-                size="sm"
-                disabled={!selectedCluster}
-              >
-                <Brain className="h-4 w-4 mr-2" />
-                Analyze Situation
-              </Button>
+            <div className="space-y-3">
+              {!recommendation && !isAnalyzing && (
+                <div className="text-center text-muted-foreground py-8">
+                  <Brain className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                  <p className="text-sm font-medium mb-1">AI Agent</p>
+                  <p className="text-xs mb-4">
+                    Select a fire and analyze the situation
+                  </p>
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                    disabled={!selectedCluster}
+                    onClick={analyze}
+                  >
+                    <Brain className="h-4 w-4 mr-2" />
+                    Analyze Situation
+                  </Button>
+                </div>
+              )}
+
+              {isAnalyzing && !recommendation && (
+                <div className="flex items-center gap-2 text-sm text-blue-400 py-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Analyzing operational picture</span>
+                  <span className="animate-pulse">...</span>
+                </div>
+              )}
+
+              {error && (
+                <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded px-3 py-2">
+                  {error}
+                </div>
+              )}
+
+              {recommendation && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      size="sm"
+                      disabled={isAnalyzing}
+                      onClick={analyze}
+                    >
+                      {isAnalyzing ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Brain className="h-4 w-4 mr-2" />
+                      )}
+                      {isAnalyzing ? 'Analyzing...' : 'Re-analyze'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearRecommendation}
+                      className="text-muted-foreground hover:text-white"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Clear
+                    </Button>
+                  </div>
+
+                  <div
+                    className="text-sm text-gray-300 leading-relaxed ai-recommendation-content"
+                    dangerouslySetInnerHTML={{
+                      __html: formatMarkdown(recommendation),
+                    }}
+                  />
+                </>
+              )}
+
+              <div className="pt-3 border-t border-white/5">
+                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs">
+                  Powered by Palantir AIP
+                </Badge>
+              </div>
             </div>
           </TabsContent>
 
@@ -327,6 +392,40 @@ export function CommandPanel() {
       </Tabs>
     </div>
   );
+}
+
+function formatMarkdown(text: string): string {
+  let html = text
+    // Escape HTML entities first
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // ## headings
+    .replace(
+      /^## (.+)$/gm,
+      '<h3 class="text-orange-400 font-bold text-sm mt-4 mb-2 pb-1 border-b border-white/10">$1</h3>'
+    )
+    // **bold**
+    .replace(
+      /\*\*(.+?)\*\*/g,
+      '<strong class="text-white">$1</strong>'
+    )
+    // Numbered lists: 1. text
+    .replace(
+      /^(\d+)\. (.+)$/gm,
+      '<div class="flex gap-2 my-1.5"><span class="text-orange-400 font-medium shrink-0">$1.</span><span>$2</span></div>'
+    )
+    // Bullet points: - text
+    .replace(
+      /^- (.+)$/gm,
+      '<div class="flex gap-2 my-1.5"><span class="text-orange-400 shrink-0">&bull;</span><span>$1</span></div>'
+    )
+    // Double newlines → paragraph breaks
+    .replace(/\n\n/g, '<div class="my-2"></div>')
+    // Single newlines → line breaks
+    .replace(/\n/g, '<br />');
+
+  return html;
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {

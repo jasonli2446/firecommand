@@ -1,0 +1,29 @@
+resource_id,name,type,status,latitude,longitude,home_base,capacity
+res_1,Engine 1,engine,available,38.58,-121.49,Sacramento,4
+res_2,Engine 2,engine,available,36.74,-119.77,Fresno,4
+res_3,Engine 3,engine,deployed,34.11,-117.29,San Bernardino,4
+res_4,Engine 4,engine,available,33.98,-117.37,Riverside,4
+res_5,Engine 5,engine,available,40.59,-122.39,Redding,4
+res_6,Engine 6,engine,en_route,35.28,-120.66,San Luis Obispo,4
+res_7,Engine 7,engine,available,37.98,-120.38,Sonora,4
+res_8,Engine 8,engine,available,39.22,-121.06,Grass Valley,4
+res_9,Engine 9,engine,maintenance,39.15,-123.21,Ukiah,4
+res_10,Engine 10,engine,available,36.96,-120.06,Madera,4
+res_11,Heli 11,helicopter,available,33.73,-117.02,Hemet-Ryan Air Base,3
+res_12,Heli 12,helicopter,deployed,35.67,-120.63,Paso Robles Air Base,3
+res_13,Heli 13,helicopter,available,39.93,-122.05,Vina Air Base,3
+res_14,Heli 14,helicopter,available,38.03,-120.41,Columbia Air Base,3
+res_15,Heli 15,helicopter,en_route,38.83,-122.66,Boggs Mountain,3
+res_16,Crew 16,hand_crew,available,34.25,-117.94,Angeles NF,20
+res_17,Crew 17,hand_crew,deployed,36.49,-118.83,Sequoia NF,20
+res_18,Crew 18,hand_crew,available,41.07,-122.54,Shasta-Trinity NF,20
+res_19,Crew 19,hand_crew,available,39.69,-122.87,Mendocino NF,20
+res_20,Crew 20,hand_crew,available,38.78,-120.42,Eldorado NF,20
+res_21,Tanker 21,air_tanker,available,38.67,-121.40,McClellan Air Base,5
+res_22,Tanker 22,air_tanker,deployed,34.22,-119.10,Channel Islands ANGS,5
+res_23,Tanker 23,air_tanker,available,33.04,-116.91,Ramona Airport,5
+res_24,Dozer 24,dozer,available,34.18,-117.08,San Bernardino NF,4
+res_25,Dozer 25,dozer,maintenance,38.19,-120.12,Stanislaus NF,4
+res_26,Water 26,water_tender,available,40.72,-122.42,Lake Shasta,4
+res_27,Water 27,water_tender,available,39.54,-121.48,Lake Oroville,4
+res_28,Water 28,water_tender,deployed,38.72,-121.16,Folsom Lake,4
