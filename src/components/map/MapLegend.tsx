@@ -36,7 +36,7 @@ export function MapLegend() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="absolute top-16 left-4 z-30">
+    <div className="absolute top-24 left-3 z-30">
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="glass-panel rounded-lg px-3 py-1.5 flex items-center gap-2 border border-white/5 text-xs text-muted-foreground hover:text-white transition-colors cursor-pointer"
