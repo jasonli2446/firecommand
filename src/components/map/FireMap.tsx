@@ -542,33 +542,6 @@ export function FireMap() {
       stroked: true,
     }),
 
-    // Evacuation zone labels
-    new TextLayer<EvacuationZone>({
-      id: 'evacuation-labels',
-      data: evacuationZones,
-      getPosition: (d: EvacuationZone) => d.center,
-      getText: (d: EvacuationZone) => `EVAC ${d.riskLevel.toUpperCase()}`,
-      getSize: 10,
-      getColor: (d: EvacuationZone) => {
-        const colors: Record<string, [number, number, number, number]> = {
-          immediate: [255, 80, 80, 160],
-          warning: [255, 165, 0, 140],
-          watch: [255, 255, 100, 120],
-        };
-        return colors[d.riskLevel] || [255, 255, 255, 100];
-      },
-      getTextAnchor: 'middle' as const,
-      getAlignmentBaseline: 'center' as const,
-      fontWeight: 700,
-      fontFamily: 'system-ui, sans-serif',
-      billboard: true,
-      sizeMinPixels: 8,
-      sizeMaxPixels: 11,
-      fontSettings: { sdf: true },
-      outlineWidth: 2,
-      outlineColor: [0, 0, 0, 180] as [number, number, number, number],
-    }),
-
     new ScatterplotLayer<FireCluster>({
       id: 'fire-clusters',
       data: fireClusters,
