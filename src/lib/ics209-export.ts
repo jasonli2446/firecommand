@@ -20,6 +20,18 @@ export function generateICS209(
   const dozers = deployed.filter((r) => r.type === 'dozer').length;
   const waterTenders = deployed.filter((r) => r.type === 'water_tender').length;
 
+  // Calculate containment from deployed resources
+  const containmentPerType: Record<string, number> = {
+    helicopter: 10, air_tanker: 12, engine: 6,
+    hand_crew: 5, dozer: 8, water_tender: 4,
+  };
+  const containmentPct = Math.min(
+    85,
+    deployed
+      .filter((r) => r.status === 'deployed' || r.status === 'en_route')
+      .reduce((sum, r) => sum + (containmentPerType[r.type] || 3), 0)
+  );
+
   const relatedZones = evacuationZones.filter(
     (z) => z.clusterId === cluster.id
   );
@@ -57,7 +69,7 @@ export function generateICS209(
 10. INCIDENT SEVERITY:     ${cluster.severity.toUpperCase()}
 11. FIRE RADIATIVE POWER:  ${cluster.totalFRP} MW
 12. ESTIMATED SIZE:        ${cluster.estimatedAcres.toLocaleString()} acres
-13. PERCENT CONTAINED:     0%
+13. PERCENT CONTAINED:     ${containmentPct}%
 14. DETECTION POINTS:      ${cluster.points.length}
 15. HOURS ACTIVE:          ${hoursActive}
 16. FIRST DETECTED:        ${cluster.firstDetected.toLocaleString()}

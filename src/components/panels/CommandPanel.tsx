@@ -34,6 +34,23 @@ const RISK_COLORS: Record<string, string> = {
   watch: 'bg-yellow-500/20 text-yellow-400',
 };
 
+const CONTAINMENT_PER_TYPE: Record<string, number> = {
+  helicopter: 10,
+  air_tanker: 12,
+  engine: 6,
+  hand_crew: 5,
+  dozer: 8,
+  water_tender: 4,
+};
+
+function getContainment(clusterId: string, resources: { type: string; status: string; assignedClusterId: string | null }[]): number {
+  const deployed = resources.filter(
+    (r) => r.assignedClusterId === clusterId && (r.status === 'deployed' || r.status === 'en_route')
+  );
+  const total = deployed.reduce((sum, r) => sum + (CONTAINMENT_PER_TYPE[r.type] || 3), 0);
+  return Math.min(85, total); // Cap at 85% — never auto-reaches 100%
+}
+
 export function CommandPanel() {
   const {
     fireClusters,
@@ -150,6 +167,40 @@ export function CommandPanel() {
                     ).toString()}
                   />
                 </div>
+
+                {/* Containment Progress */}
+                {(() => {
+                  const pct = getContainment(selectedCluster.id, resources);
+                  const color =
+                    pct >= 60 ? 'bg-emerald-500' :
+                    pct >= 40 ? 'bg-yellow-500' :
+                    pct >= 20 ? 'bg-orange-500' :
+                    'bg-red-500';
+                  const textColor =
+                    pct >= 60 ? 'text-emerald-400' :
+                    pct >= 40 ? 'text-yellow-400' :
+                    pct >= 20 ? 'text-orange-400' :
+                    'text-red-400';
+                  return (
+                    <Card className="bg-white/5 border-white/5">
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-muted-foreground uppercase tracking-wider">Containment</span>
+                          <span className={`text-lg font-bold tabular-nums ${textColor}`}>{pct}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${color} transition-all duration-700`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {pct === 0 ? 'No resources deployed — deploy units to contain' : pct >= 60 ? 'Strong containment — maintain pressure' : 'Deploy more resources to increase containment'}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
 
                 <Separator className="bg-white/5" />
 

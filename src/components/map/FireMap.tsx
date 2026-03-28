@@ -61,6 +61,23 @@ const RISK_LINE_COLORS: Record<string, [number, number, number]> = {
 // 225° = from SW, so fire spreads NE — typical California Santa Ana pattern
 const DEFAULT_WIND_DIR = 225;
 
+// Containment calculation — how much each resource type contributes
+const CONTAINMENT_PER_TYPE: Record<string, number> = {
+  helicopter: 10, air_tanker: 12, engine: 6,
+  hand_crew: 5, dozer: 8, water_tender: 4,
+};
+
+function getClusterContainment(
+  clusterId: string,
+  resources: Resource[]
+): number {
+  const deployed = resources.filter(
+    (r) => r.assignedClusterId === clusterId && (r.status === 'deployed' || r.status === 'en_route')
+  );
+  const total = deployed.reduce((sum, r) => sum + (CONTAINMENT_PER_TYPE[r.type] || 3), 0);
+  return Math.min(85, total);
+}
+
 // Pre-compute circle polygons and cache them
 const circleCache = new globalThis.Map<string, [number, number][]>();
 function createCirclePolygon(
@@ -118,6 +135,43 @@ function createSpreadWedge(
   }
   points.push([lng, lat]); // Close polygon
   spreadCache.set(key, points);
+  return points;
+}
+
+// Create a containment arc (partial ring) around a fire cluster
+function createContainmentArc(
+  center: [number, number],
+  radiusMiles: number,
+  percentage: number, // 0-100
+  thickness = 0.15, // ring thickness as fraction of radius
+  numPoints = 48
+): [number, number][] {
+  if (percentage <= 0) return [];
+  const [lng, lat] = center;
+  const outerRadius = radiusMiles / 69;
+  const innerRadius = outerRadius * (1 - thickness);
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+  const endAngle = (percentage / 100) * Math.PI * 2;
+
+  const points: [number, number][] = [];
+  // Outer arc (clockwise from top)
+  for (let i = 0; i <= numPoints; i++) {
+    const angle = -Math.PI / 2 + (i / numPoints) * endAngle;
+    points.push([
+      lng + (outerRadius * Math.cos(angle)) / cosLat,
+      lat + outerRadius * Math.sin(angle),
+    ]);
+  }
+  // Inner arc (back, counterclockwise)
+  for (let i = numPoints; i >= 0; i--) {
+    const angle = -Math.PI / 2 + (i / numPoints) * endAngle;
+    points.push([
+      lng + (innerRadius * Math.cos(angle)) / cosLat,
+      lat + innerRadius * Math.sin(angle),
+    ]);
+  }
+  // Close polygon
+  points.push(points[0]);
   return points;
 }
 
@@ -365,6 +419,32 @@ export function FireMap() {
       updateTriggers: {
         radiusScale: Date.now(),
         data: selectedClusterId,
+      },
+    }),
+
+    // Containment arc rings around clusters with deployed resources
+    new PolygonLayer<FireCluster>({
+      id: 'containment-arcs',
+      data: fireClusters.filter((c) => getClusterContainment(c.id, resources) > 0),
+      getPolygon: (d: FireCluster) => {
+        const pct = getClusterContainment(d.id, resources);
+        const radiusMiles = Math.sqrt(d.totalFRP + 1) * 0.04 + 1.5;
+        return createContainmentArc(d.centroid, radiusMiles, pct);
+      },
+      getFillColor: (d: FireCluster) => {
+        const pct = getClusterContainment(d.id, resources);
+        if (pct >= 60) return [34, 197, 94, 160] as [number, number, number, number];
+        if (pct >= 40) return [250, 204, 21, 140] as [number, number, number, number];
+        if (pct >= 20) return [255, 165, 0, 130] as [number, number, number, number];
+        return [255, 50, 50, 120] as [number, number, number, number];
+      },
+      getLineColor: [255, 255, 255, 40] as [number, number, number, number],
+      lineWidthMinPixels: 1,
+      filled: true,
+      stroked: true,
+      updateTriggers: {
+        getPolygon: [resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length],
+        getFillColor: [resources.filter((r) => r.status === 'deployed' || r.status === 'en_route').length],
       },
     }),
 
