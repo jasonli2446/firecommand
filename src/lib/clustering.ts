@@ -3,6 +3,55 @@ import { FireDetection, FireCluster } from '@/types/fire';
 const EPSILON = 0.05; // ~5.5km in degrees
 const MIN_POINTS = 2;
 
+// California geographic landmarks for realistic fire names
+const CA_LANDMARKS: { name: string; lat: number; lon: number }[] = [
+  { name: 'Angeles Forest', lat: 34.27, lon: -118.12 },
+  { name: 'Sequoia Ridge', lat: 36.45, lon: -118.75 },
+  { name: 'Shasta', lat: 41.30, lon: -122.31 },
+  { name: 'Diablo Range', lat: 37.40, lon: -121.50 },
+  { name: 'Big Sur', lat: 36.27, lon: -121.80 },
+  { name: 'Tehachapi', lat: 35.13, lon: -118.45 },
+  { name: 'San Gabriel', lat: 34.22, lon: -117.90 },
+  { name: 'Mendocino', lat: 39.30, lon: -123.30 },
+  { name: 'El Dorado', lat: 38.75, lon: -120.50 },
+  { name: 'Palomar', lat: 33.36, lon: -116.85 },
+  { name: 'Lassen Peak', lat: 40.49, lon: -121.51 },
+  { name: 'Trinity', lat: 40.80, lon: -122.75 },
+  { name: 'Carrizo Plain', lat: 35.20, lon: -119.80 },
+  { name: 'Pinnacles', lat: 36.49, lon: -121.18 },
+  { name: 'Sierra Madre', lat: 34.16, lon: -118.06 },
+  { name: 'Plumas', lat: 40.00, lon: -121.00 },
+  { name: 'Calaveras', lat: 38.20, lon: -120.40 },
+  { name: 'Kern River', lat: 35.70, lon: -118.40 },
+  { name: 'Modoc', lat: 41.60, lon: -120.70 },
+  { name: 'Topanga', lat: 34.05, lon: -118.60 },
+  { name: 'Silverado', lat: 33.74, lon: -117.63 },
+  { name: 'Camp Pendleton', lat: 33.30, lon: -117.35 },
+  { name: 'Malibu Canyon', lat: 34.05, lon: -118.72 },
+  { name: 'Lake Arrowhead', lat: 34.25, lon: -117.19 },
+  { name: 'Cuyamaca', lat: 32.95, lon: -116.58 },
+  { name: 'Yosemite', lat: 37.86, lon: -119.54 },
+  { name: 'Tahoe Basin', lat: 39.05, lon: -120.03 },
+  { name: 'Wine Country', lat: 38.50, lon: -122.75 },
+  { name: 'Santa Ynez', lat: 34.73, lon: -119.80 },
+  { name: 'Ojai Valley', lat: 34.45, lon: -119.24 },
+];
+
+function findNearestLandmark(lat: number, lon: number, usedNames: Set<string>): string {
+  let best = '';
+  let bestDist = Infinity;
+  for (const lm of CA_LANDMARKS) {
+    if (usedNames.has(lm.name)) continue;
+    const d = (lat - lm.lat) ** 2 + (lon - lm.lon) ** 2;
+    if (d < bestDist) {
+      bestDist = d;
+      best = lm.name;
+    }
+  }
+  return best;
+}
+
+// Fallback NATO alphabet for when landmarks run out
 const NATO_ALPHABET = [
   'Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel',
   'India', 'Juliet', 'Kilo', 'Lima', 'Mike', 'November', 'Oscar', 'Papa',
@@ -79,6 +128,7 @@ export function clusterFires(detections: FireDetection[]): FireCluster[] {
 
   const clusters: FireCluster[] = [];
   let nameIdx = 0;
+  const usedLandmarkNames = new Set<string>();
 
   for (const [id, points] of clusterMap) {
     const lats = points.map(p => p.latitude);
@@ -104,7 +154,15 @@ export function clusterFires(detections: FireDetection[]): FireCluster[] {
     else if (totalFRP > 20 || points.length > 2) severity = 'moderate';
     else severity = 'low';
 
-    const name = `Fire ${NATO_ALPHABET[nameIdx % NATO_ALPHABET.length]}${nameIdx >= NATO_ALPHABET.length ? ` ${Math.floor(nameIdx / NATO_ALPHABET.length) + 1}` : ''}`;
+    // Use nearest California landmark if available, fallback to NATO
+    const landmark = findNearestLandmark(avgLat, avgLon, usedLandmarkNames);
+    let name: string;
+    if (landmark) {
+      name = `${landmark} Fire`;
+      usedLandmarkNames.add(landmark);
+    } else {
+      name = `Fire ${NATO_ALPHABET[nameIdx % NATO_ALPHABET.length]}${nameIdx >= NATO_ALPHABET.length ? ` ${Math.floor(nameIdx / NATO_ALPHABET.length) + 1}` : ''}`;
+    }
     nameIdx++;
 
     clusters.push({
