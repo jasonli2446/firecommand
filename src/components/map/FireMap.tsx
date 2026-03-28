@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Map from 'react-map-gl/mapbox';
 import DeckGL from '@deck.gl/react';
-import { ScatterplotLayer, PolygonLayer, ArcLayer } from '@deck.gl/layers';
+import { ScatterplotLayer, PolygonLayer, ArcLayer, TextLayer } from '@deck.gl/layers';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import { FlyToInterpolator } from '@deck.gl/core';
 import { useAppStore } from '@/store/app-store';
@@ -40,6 +40,15 @@ const RISK_FILL_COLORS: Record<string, [number, number, number, number]> = {
   immediate: [255, 0, 0, 30],
   warning: [255, 165, 0, 20],
   watch: [255, 255, 0, 15],
+};
+
+const RESOURCE_LABELS: Record<string, string> = {
+  engine: 'E',
+  helicopter: 'H',
+  hand_crew: 'C',
+  air_tanker: 'A',
+  dozer: 'D',
+  water_tender: 'W',
 };
 
 const RISK_LINE_COLORS: Record<string, [number, number, number]> = {
@@ -310,12 +319,30 @@ export function FireMap() {
       getPosition: (d: Resource) => [d.longitude, d.latitude],
       getFillColor: (d: Resource) =>
         STATUS_COLORS[d.status] || [255, 255, 255, 100],
-      radiusMinPixels: 4,
-      radiusMaxPixels: 8,
+      radiusMinPixels: 6,
+      radiusMaxPixels: 10,
       stroked: true,
       getLineColor: [255, 255, 255, 120] as [number, number, number, number],
       lineWidthMinPixels: 1,
       pickable: true,
+    }),
+
+    // Resource type labels
+    new TextLayer<Resource>({
+      id: 'resource-labels',
+      data: resources,
+      getPosition: (d: Resource) => [d.longitude, d.latitude],
+      getText: (d: Resource) => RESOURCE_LABELS[d.type] || '?',
+      getSize: 10,
+      getColor: [255, 255, 255, 220] as [number, number, number, number],
+      getTextAnchor: 'middle' as const,
+      getAlignmentBaseline: 'center' as const,
+      fontWeight: 700,
+      fontFamily: 'system-ui, sans-serif',
+      billboard: true,
+      sizeScale: 1,
+      sizeMinPixels: 8,
+      sizeMaxPixels: 12,
     }),
 
     // Deployment arcs from resources to assigned fire clusters

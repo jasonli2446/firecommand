@@ -272,7 +272,7 @@ export function CommandPanel() {
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                     size="sm"
                     disabled={!selectedCluster}
-                    onClick={analyze}
+                    onClick={() => analyze(weather)}
                   >
                     <Brain className="h-4 w-4 mr-2" />
                     Analyze Situation
@@ -301,7 +301,7 @@ export function CommandPanel() {
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                       size="sm"
                       disabled={isAnalyzing}
-                      onClick={analyze}
+                      onClick={() => analyze(weather)}
                     >
                       {isAnalyzing ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />

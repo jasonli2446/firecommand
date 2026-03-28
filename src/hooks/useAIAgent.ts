@@ -2,13 +2,14 @@
 
 import { useState, useCallback } from 'react';
 import { useAppStore } from '@/store/app-store';
+import type { WeatherCondition } from '@/types/weather';
 
 export function useAIAgent() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [recommendation, setRecommendation] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const analyze = useCallback(async () => {
+  const analyze = useCallback(async (weather?: WeatherCondition | null) => {
     const state = useAppStore.getState();
     const { fireClusters, resources, evacuationZones, selectedClusterId } = state;
 
@@ -48,6 +49,13 @@ export function useAIAgent() {
             radiusMiles: z.radiusMiles,
           })),
           selectedClusterId,
+          weather: weather ? {
+            temperature: weather.temperature,
+            humidity: weather.humidity,
+            windSpeed: weather.windSpeed,
+            windDirection: weather.windDirection,
+            windGust: weather.windGust,
+          } : undefined,
         }),
       });
 
