@@ -90,7 +90,11 @@ export function CommandPanel() {
   return (
     <div className="fixed top-12 right-0 bottom-16 w-[420px] z-40 glass-panel border-l border-white/5 flex flex-col panel-enter">
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
-        <span className="text-sm font-semibold text-white">Command Panel</span>
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-0.5 bg-blue-500 rounded-full" />
+          <span className="text-sm font-semibold text-white tracking-wide">Command</span>
+          <span className="text-[9px] text-muted-foreground/50 uppercase tracking-widest">Panel</span>
+        </div>
         <Button
           variant="ghost"
           size="sm"
@@ -460,13 +464,22 @@ export function CommandPanel() {
           <TabsContent value="ai" className="p-4 mt-0">
             <div className="space-y-3">
               {!recommendation && !isAnalyzing && (
-                <div className="text-center text-muted-foreground py-8">
-                  <Brain className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm font-medium mb-1">AIP Agent</p>
-                  <p className="text-xs mb-4">
+                <div className="text-center text-muted-foreground py-6">
+                  <div className="relative mx-auto w-14 h-14 mb-4">
+                    <div className="absolute inset-0 rounded-full bg-blue-500/10 animate-pulse" />
+                    <div className="absolute inset-2 rounded-full bg-blue-500/5 border border-blue-500/20 flex items-center justify-center">
+                      <Brain className="h-5 w-5 text-blue-400/80" />
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold text-white mb-0.5">Palantir AIP Agent</p>
+                  <p className="text-[10px] text-emerald-400/70 uppercase tracking-wider mb-3">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 mr-1 align-middle" />
+                    Connected
+                  </p>
+                  <p className="text-xs mb-4 text-muted-foreground">
                     {selectedCluster
-                      ? `Analyze ${selectedCluster.name} with Palantir AIP`
-                      : 'Select a fire to analyze with Palantir AIP'}
+                      ? `Analyze ${selectedCluster.name} — fire data, weather, and resources`
+                      : 'Select a fire on the map to analyze'}
                   </p>
                   <Button
                     className="bg-blue-600 hover:bg-blue-700 text-white"
