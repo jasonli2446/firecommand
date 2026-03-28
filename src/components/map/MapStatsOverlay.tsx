@@ -18,12 +18,16 @@ export function MapStatsOverlay() {
     0
   );
 
+  const critCount = fireClusters.filter((c) => c.severity === 'critical').length;
+  const highCount = fireClusters.filter((c) => c.severity === 'high').length;
+
   return (
     <div className="absolute top-[76px] left-3 z-30 flex gap-2">
       <StatPill
         icon={<Flame className="h-3 w-3 text-orange-500" />}
-        label="Total Fires"
+        label="Active Fires"
         value={fireClusters.length.toString()}
+        accent={critCount > 0 ? 'critical' : highCount > 0 ? 'high' : undefined}
       />
       <StatPill
         icon={<Wind className="h-3 w-3 text-red-400" />}
@@ -50,19 +54,23 @@ function StatPill({
   icon,
   label,
   value,
+  accent,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  accent?: 'critical' | 'high';
 }) {
+  const borderClass = accent === 'critical' ? 'border-red-500/30' :
+                      accent === 'high' ? 'border-orange-500/30' : 'border-white/5';
   return (
-    <div className="glass-panel rounded-lg px-3 py-1.5 flex items-center gap-2 border border-white/5 min-w-[140px]">
+    <div className={`glass-panel rounded-lg px-3 py-1.5 flex items-center gap-2 border ${borderClass} min-w-[120px]`}>
       {icon}
       <div className="flex flex-col">
         <span className="text-[9px] text-muted-foreground uppercase tracking-wider leading-none">
           {label}
         </span>
-        <span className="text-sm font-bold text-white leading-tight">
+        <span className="text-sm font-bold text-white leading-tight tabular-nums">
           {value}
         </span>
       </div>

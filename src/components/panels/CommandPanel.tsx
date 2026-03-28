@@ -358,6 +358,37 @@ export function CommandPanel() {
                   </p>
                 </div>
 
+                {/* Threat Level */}
+                {(() => {
+                  const critCount = fireClusters.filter((c) => c.severity === 'critical').length;
+                  const highCount = fireClusters.filter((c) => c.severity === 'high').length;
+                  const totalFRP = fireClusters.reduce((s, c) => s + c.totalFRP, 0);
+                  const level = critCount >= 2 || totalFRP > 500 ? 'EXTREME' :
+                                critCount >= 1 || highCount >= 3 ? 'HIGH' :
+                                highCount >= 1 || totalFRP > 100 ? 'ELEVATED' : 'GUARDED';
+                  const levelColor = level === 'EXTREME' ? 'text-red-400 bg-red-500/10 border-red-500/20' :
+                                    level === 'HIGH' ? 'text-orange-400 bg-orange-500/10 border-orange-500/20' :
+                                    level === 'ELEVATED' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' :
+                                    'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                  const barColor = level === 'EXTREME' ? 'bg-red-500' :
+                                  level === 'HIGH' ? 'bg-orange-500' :
+                                  level === 'ELEVATED' ? 'bg-yellow-500' : 'bg-emerald-500';
+                  const barWidth = level === 'EXTREME' ? '100%' : level === 'HIGH' ? '75%' : level === 'ELEVATED' ? '50%' : '25%';
+                  return (
+                    <Card className={`border ${levelColor}`}>
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Threat Level</span>
+                          <span className="text-sm font-bold tracking-wider">{level}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                          <div className={`h-full rounded-full ${barColor} transition-all duration-1000`} style={{ width: barWidth }} />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
                 {/* Operational Summary */}
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
