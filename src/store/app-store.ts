@@ -28,6 +28,7 @@ interface AppState {
   setPlaybackSpeed: (speed: number) => void;
   deployResource: (resourceId: string, clusterId: string) => void;
   recallResource: (resourceId: string) => void;
+  executeAIPlan: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -65,4 +66,42 @@ export const useAppStore = create<AppState>((set) => ({
         r.id === resourceId ? { ...r, status: 'available' as const, assignedClusterId: null } : r
       ),
     })),
+  executeAIPlan: () =>
+    set((state) => {
+      if (!state.selectedClusterId) return state;
+      const clusterId = state.selectedClusterId;
+      const cluster = state.fireClusters.find((c) => c.id === clusterId);
+      if (!cluster) return state;
+
+      // Deploy resources based on cluster severity
+      const deployCount =
+        cluster.severity === 'critical' ? 6 :
+        cluster.severity === 'high' ? 4 : 2;
+
+      // Prioritize: helicopters/air_tankers for critical, engines/crews for others
+      const priorityTypes =
+        cluster.severity === 'critical'
+          ? ['helicopter', 'air_tanker', 'engine', 'hand_crew', 'water_tender', 'dozer']
+          : ['engine', 'hand_crew', 'water_tender', 'helicopter', 'dozer', 'air_tanker'];
+
+      const available = state.resources
+        .filter((r) => r.status === 'available')
+        .sort((a, b) => {
+          const aIdx = priorityTypes.indexOf(a.type);
+          const bIdx = priorityTypes.indexOf(b.type);
+          return aIdx - bIdx;
+        });
+
+      const toDeploy = new Set(
+        available.slice(0, deployCount).map((r) => r.id)
+      );
+
+      return {
+        resources: state.resources.map((r) =>
+          toDeploy.has(r.id)
+            ? { ...r, status: 'en_route' as const, assignedClusterId: clusterId }
+            : r
+        ),
+      };
+    }),
 }));

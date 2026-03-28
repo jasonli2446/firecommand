@@ -1,6 +1,7 @@
 'use client';
 
-import { X, Activity, Brain, Truck, Shield, Loader2, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { X, Activity, Brain, Truck, Shield, Loader2, Trash2, Zap, Check } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +45,7 @@ export function CommandPanel() {
     setActiveTab,
     deployResource,
     recallResource,
+    executeAIPlan,
   } = useAppStore();
 
   const { isAnalyzing, recommendation, error, analyze, clearRecommendation } =
@@ -325,6 +327,8 @@ export function CommandPanel() {
                       __html: formatMarkdown(recommendation),
                     }}
                   />
+
+                  <ExecuteButton onExecute={executeAIPlan} />
                 </>
               )}
 
@@ -497,6 +501,37 @@ function MetricCard({ label, value }: { label: string; value: string }) {
         <p className="text-xl font-bold text-white mt-0.5">{value}</p>
       </CardContent>
     </Card>
+  );
+}
+
+function ExecuteButton({ onExecute }: { onExecute: () => void }) {
+  const [executed, setExecuted] = useState(false);
+
+  const handleExecute = () => {
+    onExecute();
+    setExecuted(true);
+  };
+
+  if (executed) {
+    return (
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+        <Check className="h-4 w-4 text-emerald-400" />
+        <span className="text-sm text-emerald-400 font-medium">
+          Resources deployed — check map for updates
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <Button
+      className="w-full bg-orange-600 hover:bg-orange-700 text-white glow-orange"
+      size="sm"
+      onClick={handleExecute}
+    >
+      <Zap className="h-4 w-4 mr-2" />
+      Execute Recommendation
+    </Button>
   );
 }
 

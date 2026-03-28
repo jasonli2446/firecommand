@@ -112,6 +112,11 @@
   animation: fire-pulse 2s ease-in-out infinite;
 }
 
+@keyframes ticker {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
 /* AI recommendation content styles */
 .ai-recommendation-content h3 {
   scroll-margin-top: 1rem;
