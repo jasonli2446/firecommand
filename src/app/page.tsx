@@ -6,6 +6,7 @@ import { AppHeader } from '@/components/header/AppHeader';
 import { CommandPanel } from '@/components/panels/CommandPanel';
 import { TimelineBar } from '@/components/timeline/TimelineBar';
 import { MapStatsOverlay } from '@/components/map/MapStatsOverlay';
+import { MapLegend } from '@/components/map/MapLegend';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { useFireData } from '@/hooks/useFireData';
 import { useAppStore } from '@/store/app-store';
@@ -66,6 +67,7 @@ export default function Home() {
     <div className="relative h-full w-full">
       <FireMap />
       <AppHeader lastUpdated={lastUpdated} isLoading={isLoading} />
+      <MapLegend />
       <MapStatsOverlay />
       <CommandPanel />
       <TimelineBar />

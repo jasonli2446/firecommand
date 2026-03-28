@@ -118,6 +118,7 @@ export function FireMap() {
     resources,
     evacuationZones,
     selectCluster,
+    selectedClusterId,
     timelinePosition,
   } = useAppStore();
 
@@ -264,6 +265,25 @@ export function FireMap() {
       },
     }),
 
+    // Selection ring around selected cluster
+    new ScatterplotLayer<FireCluster>({
+      id: 'selected-cluster-ring',
+      data: fireClusters.filter((c) => c.id === selectedClusterId),
+      getPosition: (d: FireCluster) => d.centroid,
+      getRadius: (d: FireCluster) => Math.sqrt(d.totalFRP + 1) * 140,
+      getFillColor: [0, 0, 0, 0] as [number, number, number, number],
+      radiusMinPixels: 12,
+      radiusMaxPixels: 55,
+      radiusScale: pulseRef.current,
+      stroked: true,
+      getLineColor: [255, 255, 255, 200] as [number, number, number, number],
+      lineWidthMinPixels: 2,
+      updateTriggers: {
+        radiusScale: Date.now(),
+        data: selectedClusterId,
+      },
+    }),
+
     new ScatterplotLayer<Resource>({
       id: 'resources',
       data: resources,
@@ -300,7 +320,7 @@ export function FireMap() {
       getHeight: 0.3,
       greatCircle: false,
     }),
-  ], [filteredDetections, fireClusters, resources, evacuationZones, handleClusterClick]);
+  ], [filteredDetections, fireClusters, resources, evacuationZones, selectedClusterId, handleClusterClick]);
 
   const getTooltip = useCallback((info: PickingInfo) => {
     if (!info.object) return null;
