@@ -1,0 +1,346 @@
+'use client';
+
+import { X, Activity, Brain, Truck, Shield } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useAppStore } from '@/store/app-store';
+import { useWeatherData } from '@/hooks/useWeatherData';
+
+const SEVERITY_BADGE_COLORS: Record<string, string> = {
+  critical: 'bg-red-500/20 text-red-400 border-red-500/30',
+  high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  moderate: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  low: 'bg-green-500/20 text-green-400 border-green-500/30',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  available: 'bg-emerald-500/20 text-emerald-400',
+  deployed: 'bg-blue-500/20 text-blue-400',
+  en_route: 'bg-yellow-500/20 text-yellow-400',
+  maintenance: 'bg-gray-500/20 text-gray-400',
+};
+
+const RISK_COLORS: Record<string, string> = {
+  immediate: 'bg-red-500/20 text-red-400',
+  warning: 'bg-orange-500/20 text-orange-400',
+  watch: 'bg-yellow-500/20 text-yellow-400',
+};
+
+export function CommandPanel() {
+  const {
+    fireClusters,
+    resources,
+    evacuationZones,
+    selectedClusterId,
+    panelOpen,
+    activeTab,
+    setPanelOpen,
+    setActiveTab,
+  } = useAppStore();
+
+  const selectedCluster = fireClusters.find((c) => c.id === selectedClusterId);
+
+  const { weather } = useWeatherData(
+    selectedCluster ? selectedCluster.centroid[1] : null,
+    selectedCluster ? selectedCluster.centroid[0] : null
+  );
+
+  if (!panelOpen) return null;
+
+  return (
+    <div className="fixed top-12 right-0 bottom-16 w-[420px] z-40 glass-panel border-l border-white/5 flex flex-col">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
+        <span className="text-sm font-semibold text-white">Command Panel</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setPanelOpen(false)}
+          className="h-7 w-7 p-0"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex-1 flex flex-col min-h-0"
+      >
+        <TabsList className="grid w-full grid-cols-4 bg-white/5 rounded-none border-b border-white/5 h-10">
+          <TabsTrigger
+            value="overview"
+            className="text-xs gap-1 data-[state=active]:bg-white/10"
+          >
+            <Activity className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">Overview</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="ai"
+            className="text-xs gap-1 data-[state=active]:bg-white/10"
+          >
+            <Brain className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">AI</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="resources"
+            className="text-xs gap-1 data-[state=active]:bg-white/10"
+          >
+            <Truck className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">Resources</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="evacuations"
+            className="text-xs gap-1 data-[state=active]:bg-white/10"
+          >
+            <Shield className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">Evac</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <ScrollArea className="flex-1">
+          <TabsContent value="overview" className="p-4 mt-0 space-y-4">
+            {selectedCluster ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-white">
+                    {selectedCluster.name}
+                  </h3>
+                  <Badge
+                    className={
+                      SEVERITY_BADGE_COLORS[selectedCluster.severity]
+                    }
+                  >
+                    {selectedCluster.severity.toUpperCase()}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <MetricCard
+                    label="Fire Power (FRP)"
+                    value={selectedCluster.totalFRP.toString()}
+                  />
+                  <MetricCard
+                    label="Est. Acres"
+                    value={selectedCluster.estimatedAcres.toLocaleString()}
+                  />
+                  <MetricCard
+                    label="Detections"
+                    value={selectedCluster.points.length.toString()}
+                  />
+                  <MetricCard
+                    label="Hours Active"
+                    value={Math.round(
+                      (Date.now() -
+                        selectedCluster.firstDetected.getTime()) /
+                        3600000
+                    ).toString()}
+                  />
+                </div>
+
+                <Separator className="bg-white/5" />
+
+                {weather && (
+                  <Card className="bg-white/5 border-white/5">
+                    <CardHeader className="pb-2 pt-3 px-3">
+                      <CardTitle className="text-sm text-muted-foreground">
+                        Weather at Fire
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-3 pb-3">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Wind</span>
+                          <p className="text-white font-medium">
+                            {weather.windSpeed} mph{' '}
+                            {getCardinalDirection(weather.windDirection)}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Gusts</span>
+                          <p className="text-white font-medium">
+                            {Math.round(weather.windGust)} mph
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Temp</span>
+                          <p className="text-white font-medium">
+                            {weather.temperature}°F
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">
+                            Humidity
+                          </span>
+                          <p className="text-white font-medium">
+                            {weather.humidity}%
+                          </p>
+                        </div>
+                      </div>
+                      {weather.isFireWeatherWarning && (
+                        <Badge variant="destructive" className="mt-2 text-xs">
+                          FIRE WEATHER WARNING
+                        </Badge>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>
+                    First detected:{' '}
+                    {selectedCluster.firstDetected.toLocaleString()}
+                  </p>
+                  <p>
+                    Last detected:{' '}
+                    {selectedCluster.lastDetected.toLocaleString()}
+                  </p>
+                  <p>
+                    Coords: {selectedCluster.centroid[1].toFixed(4)},{' '}
+                    {selectedCluster.centroid[0].toFixed(4)}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-muted-foreground py-12">
+                <Activity className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">
+                  Click a fire on the map to view details
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="ai" className="p-4 mt-0">
+            <div className="text-center text-muted-foreground py-12">
+              <Brain className="h-8 w-8 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium mb-1">AI Agent</p>
+              <p className="text-xs">
+                Select a fire and analyze the situation
+              </p>
+              <Button
+                className="mt-4"
+                size="sm"
+                disabled={!selectedCluster}
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                Analyze Situation
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="resources" className="p-4 mt-0 space-y-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-white">Resources</h3>
+              <span className="text-xs text-muted-foreground">
+                {resources.length} total
+              </span>
+            </div>
+            {[
+              'engine',
+              'helicopter',
+              'hand_crew',
+              'air_tanker',
+              'dozer',
+              'water_tender',
+            ].map((type) => {
+              const typeResources = resources.filter((r) => r.type === type);
+              if (typeResources.length === 0) return null;
+              const available = typeResources.filter(
+                (r) => r.status === 'available'
+              ).length;
+              return (
+                <div key={type} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      {type.replace('_', ' ')}s
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {available}/{typeResources.length} avail
+                    </span>
+                  </div>
+                  {typeResources.map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between py-1.5 px-2 rounded bg-white/5 text-sm"
+                    >
+                      <span className="text-white">{r.name}</span>
+                      <Badge className={`text-xs ${STATUS_COLORS[r.status]}`}>
+                        {r.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </TabsContent>
+
+          <TabsContent value="evacuations" className="p-4 mt-0 space-y-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-white">
+                Evacuation Zones
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                {evacuationZones.length} active
+              </span>
+            </div>
+            {evacuationZones.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                <Shield className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">No active evacuation zones</p>
+              </div>
+            ) : (
+              evacuationZones.map((zone) => {
+                const fire = fireClusters.find(
+                  (c) => c.id === zone.clusterId
+                );
+                return (
+                  <Card key={zone.id} className="bg-white/5 border-white/5">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-white">
+                          {fire?.name || 'Unknown Fire'}
+                        </span>
+                        <Badge
+                          className={`text-xs ${RISK_COLORS[zone.riskLevel]}`}
+                        >
+                          {zone.riskLevel.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-0.5">
+                        <p>
+                          Population: ~{zone.population.toLocaleString()}
+                        </p>
+                        <p>Radius: {zone.radiusMiles} miles</p>
+                        <p>Issued: {zone.issuedAt.toLocaleString()}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </TabsContent>
+        </ScrollArea>
+      </Tabs>
+    </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card className="bg-white/5 border-white/5">
+      <CardContent className="p-3">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-xl font-bold text-white mt-0.5">{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function getCardinalDirection(degrees: number): string {
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return dirs[Math.round(degrees / 45) % 8];
+}
