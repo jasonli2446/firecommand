@@ -392,10 +392,18 @@ export function CommandPanel() {
                             onClick={() => useAppStore.getState().selectCluster(c.id)}
                             className="w-full flex items-center justify-between py-1.5 px-2 rounded bg-white/5 hover:bg-white/10 transition-colors text-sm cursor-pointer"
                           >
-                            <span className="text-white font-medium">
+                            <span className="text-white font-medium truncate">
                               {c.name}
                             </span>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {(() => {
+                                const pct = getContainment(c.id, resources);
+                                if (pct > 0) {
+                                  const clr = pct >= 60 ? 'text-emerald-400' : pct >= 40 ? 'text-yellow-400' : 'text-orange-400';
+                                  return <span className={`text-[10px] font-bold tabular-nums ${clr}`}>{pct}%</span>;
+                                }
+                                return null;
+                              })()}
                               <span className="text-[10px] text-muted-foreground">
                                 {c.estimatedAcres.toLocaleString()} ac
                               </span>
