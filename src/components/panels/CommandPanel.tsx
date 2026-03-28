@@ -374,10 +374,22 @@ export function CommandPanel() {
               )}
 
               {isAnalyzing && !recommendation && (
-                <div className="flex items-center gap-2 text-sm text-blue-400 py-4">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Analyzing operational picture</span>
-                  <span className="animate-pulse">...</span>
+                <div className="space-y-3 py-2">
+                  <div className="flex items-center gap-2 text-sm text-blue-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Analyzing operational picture...</span>
+                  </div>
+                  {/* Skeleton loading bars */}
+                  <div className="space-y-2">
+                    <div className="h-3 bg-white/5 rounded animate-pulse w-3/4" />
+                    <div className="h-3 bg-white/5 rounded animate-pulse w-full" />
+                    <div className="h-3 bg-white/5 rounded animate-pulse w-5/6" />
+                    <div className="h-3 bg-white/5 rounded animate-pulse w-2/3" style={{ animationDelay: '0.15s' }} />
+                    <div className="h-3 bg-white/5 rounded animate-pulse w-4/5" style={{ animationDelay: '0.3s' }} />
+                  </div>
+                  <div className="text-[10px] text-muted-foreground/50">
+                    Processing fire data, weather conditions, and resource availability...
+                  </div>
                 </div>
               )}
 
@@ -415,7 +427,7 @@ export function CommandPanel() {
                   </div>
 
                   <div
-                    className="text-sm text-gray-300 leading-relaxed ai-recommendation-content"
+                    className={`text-sm text-gray-300 leading-relaxed ai-recommendation-content ${isAnalyzing ? 'ai-streaming' : ''}`}
                     dangerouslySetInnerHTML={{
                       __html: formatMarkdown(recommendation),
                     }}

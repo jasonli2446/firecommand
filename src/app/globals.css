@@ -126,6 +126,18 @@
   letter-spacing: 0.01em;
 }
 
+/* Blinking cursor for streaming text */
+.ai-streaming::after {
+  content: '▋';
+  animation: blink 0.8s step-end infinite;
+  color: #3b82f6;
+  font-weight: normal;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
 /* Smooth panel transitions */
 .panel-enter {
   animation: panel-slide-in 0.3s ease-out;
